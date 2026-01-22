@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Personalized Learning Path</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden">
+<!-- Mobile Layout Container -->
+<div class="relative min-h-screen flex flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-2xl">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between">
+<button class="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Learning Path</h1>
+<button class="p-2 -mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative">
+<span class="material-symbols-outlined text-slate-700 dark:text-white">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col pb-24">
+<!-- Hero Stats Section -->
+<section class="p-4 pt-6">
+<div class="flex flex-col gap-1 mb-6">
+<span class="text-primary font-medium text-sm tracking-widest uppercase">Current Track</span>
+<h2 class="text-3xl font-bold leading-tight">Python Data Science</h2>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Mastery Card -->
+<div class="bg-white dark:bg-[#1e2433] p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-2 mb-2 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+<span class="text-xs font-bold uppercase tracking-wider">To Mastery</span>
+</div>
+<p class="text-2xl font-bold text-slate-900 dark:text-white">12 Hrs</p>
+<p class="text-xs text-slate-400 mt-1">Based on your pace</p>
+</div>
+<!-- Streak Card -->
+<div class="bg-white dark:bg-[#1e2433] p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+<!-- Decorative gradient blob -->
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-primary/10 rounded-full blur-xl"></div>
+<div class="flex items-center gap-2 mb-2 text-slate-500 dark:text-slate-400 relative z-10">
+<span class="material-symbols-outlined text-[20px] text-orange-500">local_fire_department</span>
+<span class="text-xs font-bold uppercase tracking-wider">Streak</span>
+</div>
+<p class="text-2xl font-bold text-slate-900 dark:text-white relative z-10">5 Days</p>
+<p class="text-xs text-slate-400 mt-1 relative z-10">Keep it up!</p>
+</div>
+</div>
+</section>
+<!-- Success Map / Vertical Stepper -->
+<section class="px-4 mt-2">
+<div class="flex flex-col relative">
+<!-- Vertical Line (Background) -->
+<div class="absolute left-[27px] top-4 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-700 z-0"></div>
+<!-- Step 1: Completed -->
+<div class="relative z-10 flex gap-4 pb-8 group">
+<div class="flex flex-col items-center">
+<div class="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(19,91,236,0.4)] border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-2xl font-bold">check</span>
+</div>
+<!-- Connector Line Highlight for completed segments -->
+<div class="w-[2px] bg-primary h-full absolute top-14 left-[27px] -z-10"></div>
+</div>
+<div class="flex-1 pt-2">
+<div class="bg-white dark:bg-[#1e2433] p-4 rounded-xl border border-slate-100 dark:border-slate-800 opacity-60 hover:opacity-100 transition-opacity">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-lg">Intro to AI Basics</h3>
+<span class="text-xs font-bold bg-green-500/10 text-green-500 px-2 py-1 rounded">Done</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 leading-snug">Foundations of artificial intelligence and machine learning history.</p>
+</div>
+</div>
+</div>
+<!-- Step 2: Current (Active) -->
+<div class="relative z-10 flex gap-4 pb-12 group">
+<div class="flex flex-col items-center">
+<div class="relative flex items-center justify-center w-14 h-14">
+<!-- Pulsing Ring -->
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/30 opacity-75"></span>
+<div class="relative inline-flex rounded-full h-14 w-14 bg-background-light dark:bg-background-dark border-2 border-primary items-center justify-center z-20">
+<span class="material-symbols-outlined text-primary text-2xl">play_arrow</span>
+</div>
+</div>
+<!-- Connector Line Gradient to fade out -->
+<div class="w-[2px] bg-gradient-to-b from-primary to-transparent h-full absolute top-14 left-[27px] -z-10"></div>
+</div>
+<div class="flex-1 pt-1">
+<div class="bg-white dark:bg-[#1e2433] p-5 rounded-xl border-l-4 border-l-primary border-y border-r border-slate-100 dark:border-slate-800 shadow-lg relative overflow-hidden">
+<!-- Progress Bar Background -->
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[45%]"></div>
+<div class="absolute bottom-0 left-0 h-1 bg-slate-200 dark:bg-slate-700 w-full -z-10"></div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold text-primary uppercase tracking-wide">In Progress</span>
+<span class="text-xs font-medium text-slate-400">45%</span>
+</div>
+<h3 class="font-bold text-xl mb-2 text-slate-900 dark:text-white">Neural Networks</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Understanding perceptrons, activation functions, and layers.</p>
+<button class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span>Continue Learning</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Step 3: Locked -->
+<div class="relative z-10 flex gap-4 pb-8 group opacity-50">
+<div class="flex flex-col items-center">
+<div class="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center border-4 border-background-light dark:border-background-dark text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined text-2xl">lock</span>
+</div>
+<div class="w-[2px] bg-slate-200 dark:bg-slate-700 h-full absolute top-14 left-[27px] -z-10"></div>
+</div>
+<div class="flex-1 pt-2">
+<div class="bg-white dark:bg-[#1e2433] p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+<h3 class="font-bold text-lg text-slate-700 dark:text-slate-300">Deep Learning &amp; NLP</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Advanced architectures and natural language processing.</p>
+<div class="mt-3 flex items-center gap-2 text-xs text-slate-400 font-medium">
+<span class="material-symbols-outlined text-sm">timer</span>
+<span>Est. 4 hours</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 4: Locked -->
+<div class="relative z-10 flex gap-4 pb-8 group opacity-50">
+<div class="flex flex-col items-center">
+<div class="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center border-4 border-background-light dark:border-background-dark text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined text-2xl">lock</span>
+</div>
+</div>
+<div class="flex-1 pt-2">
+<div class="bg-white dark:bg-[#1e2433] p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+<h3 class="font-bold text-lg text-slate-700 dark:text-slate-300">Computer Vision</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Image processing techniques and CNNs.</p>
+<div class="mt-3 flex items-center gap-2 text-xs text-slate-400 font-medium">
+<span class="material-symbols-outlined text-sm">timer</span>
+<span>Est. 6 hours</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button (Optional secondary action) -->
+<button class="fixed bottom-24 right-4 w-12 h-12 bg-slate-800 dark:bg-slate-700 text-white rounded-full shadow-lg flex items-center justify-center md:hidden z-30">
+<span class="material-symbols-outlined">smart_toy</span>
+</button>
+<!-- Mobile Navigation (iOS Tab Bar style) -->
+<nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-safe pt-2">
+<div class="flex justify-around items-center h-16 max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 w-16 text-primary" href="#">
+<span class="material-symbols-outlined filled">map</span>
+<span class="text-[10px] font-medium">Path</span>
+</a>
+<a class="flex flex-col items-center gap-1 w-16 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="text-[10px] font-medium">Explore</span>
+</a>
+<a class="flex flex-col items-center gap-1 w-16 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-[10px] font-medium">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 w-16 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+<!-- iOS Home Indicator Spacing -->
+<div class="h-1 w-full"></div>
+</nav>
+<!-- Bottom Sheet (Collapsed/Hidden State - Simulated) -->
+<!-- In a real app, this would be draggable. Here it's a visual representation of the concept mentioned in the prompt. -->
+<div class="hidden fixed bottom-0 left-0 w-full z-50 bg-[#1e2433] rounded-t-2xl shadow-[0_-5px_20px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300">
+<div class="w-full flex justify-center pt-3 pb-1">
+<div class="w-12 h-1.5 bg-slate-600 rounded-full"></div>
+</div>
+<div class="p-6 pb-10">
+<h3 class="text-xl font-bold text-white mb-2">Neural Networks</h3>
+<p class="text-slate-300 mb-6">Ready to continue? You're 45% through this module.</p>
+<button class="w-full bg-primary text-white font-bold py-3 rounded-lg">Resume Lesson</button>
+</div>
+</div>
+</div>
+</body></html>

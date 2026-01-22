@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Progress &amp; Mastery Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .heatmap-cell {
+            aspect-ratio: 1/1;
+            border-radius: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-slate-100">
+<!-- Top Navigation Bar -->
+<div class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center p-4 justify-between max-w-md mx-auto">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 overflow-hidden">
+<div class="bg-center bg-no-repeat aspect-square bg-cover size-full" data-alt="User profile avatar with professional lighting" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDNvdqnDjLPBY2kyilCGk3tFEFYjGiKW5krXviOJRSRjwZ1-m3SzDILk_EymsdY2Fi_gj74Kc_SQO2MWWLwOjDe2XW5vyoE7ydXs_kKf3jrEAPKIZGFvljuus5MMWhZNOrA9l_IlAfoPKOyq4jzj32TglSC_ZXu4ljtn7b3a2ZDHdnj01437-cq4hj9vJMK-dvZsjuhGrH-bawiIPAtcNR7HHMOKE1PV1S_FUE-vsedqi3lI5lP6Oh_qCtSa-SGSi2UFxoxL9ErXxk");'>
+</div>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center font-display">Mastery Insights</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-lg bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">ios_share</span>
+</button>
+</div>
+</div>
+</div>
+<main class="max-w-md mx-auto pb-24">
+<!-- Time Range Selector (Chips) -->
+<div class="flex gap-3 p-4 overflow-x-auto no-scrollbar">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-primary px-4 text-white">
+<span class="text-sm font-semibold">Last 30 Days</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-slate-200 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 border border-transparent hover:border-primary/30">
+<span class="text-sm font-medium">All Time</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-slate-200 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 border border-transparent hover:border-primary/30">
+<span class="text-sm font-medium">Q3 2024</span>
+</button>
+</div>
+<!-- High-Level Stats -->
+<div class="grid grid-cols-3 gap-3 px-4 py-2">
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+<p class="text-[11px] uppercase tracking-widest font-bold text-slate-500">Time</p>
+<p class="text-xl font-bold font-display">42.5h</p>
+<p class="text-[#0bda5e] text-xs font-medium">+12%</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+<p class="text-[11px] uppercase tracking-widest font-bold text-slate-500">Score</p>
+<p class="text-xl font-bold font-display">845</p>
+<p class="text-[#0bda5e] text-xs font-medium">+4%</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+<p class="text-[11px] uppercase tracking-widest font-bold text-slate-500">Growth</p>
+<p class="text-xl font-bold font-display">+18%</p>
+<p class="text-[#0bda5e] text-xs font-medium">Strong</p>
+</div>
+</div>
+<!-- Skill Mastery Radar Section -->
+<div class="px-4 py-6">
+<div class="rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden relative">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-lg font-bold font-display">Skill Mastery Radar</h3>
+<p class="text-sm text-slate-500">Relative to global percentile</p>
+</div>
+<div class="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold">
+                        Top 5%
+                    </div>
+</div>
+<!-- Custom Radar Visual -->
+<div class="relative w-full aspect-square flex items-center justify-center py-8">
+<!-- Concentric Circles Background -->
+<div class="absolute inset-0 flex items-center justify-center opacity-10">
+<div class="w-full h-full border border-slate-400 rounded-full"></div>
+<div class="absolute w-3/4 h-3/4 border border-slate-400 rounded-full"></div>
+<div class="absolute w-1/2 h-1/2 border border-slate-400 rounded-full"></div>
+<div class="absolute w-1/4 h-1/4 border border-slate-400 rounded-full"></div>
+</div>
+<!-- Labels -->
+<div class="absolute top-0 text-[10px] font-bold text-primary uppercase">Logic</div>
+<div class="absolute right-0 text-[10px] font-bold text-slate-400 uppercase">Creativity</div>
+<div class="absolute bottom-0 text-[10px] font-bold text-slate-400 uppercase">Ethics</div>
+<div class="absolute left-0 text-[10px] font-bold text-slate-400 uppercase">Technical</div>
+<!-- Radar Shape SVG -->
+<svg class="w-full h-full" viewbox="0 0 200 200">
+<polygon class="fill-primary/30 stroke-primary stroke-2" points="100,20 170,100 100,160 50,80"></polygon>
+<circle class="fill-primary" cx="100" cy="20" r="4"></circle>
+<circle class="fill-slate-400" cx="170" cy="100" r="4"></circle>
+<circle class="fill-slate-400" cx="100" cy="160" r="4"></circle>
+<circle class="fill-slate-400" cx="50" cy="80" r="4"></circle>
+</svg>
+<!-- Center Percentage -->
+<div class="absolute inset-0 flex items-center justify-center flex-col">
+<span class="text-4xl font-bold font-display">78%</span>
+<span class="text-[10px] font-medium text-slate-500">Overall</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Learning Streak / Heatmap Section -->
+<div class="px-4 py-2">
+<div class="rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold font-display">Consistency Streak</h3>
+<div class="flex items-center gap-1 text-[#0bda5e]">
+<span class="material-symbols-outlined text-[18px]">local_fire_department</span>
+<span class="text-sm font-bold">14 Days</span>
+</div>
+</div>
+<div class="grid grid-cols-7 gap-1 w-full">
+<!-- Simplified Heatmap Mockup (4 weeks) -->
+<!-- Week 1 -->
+<div class="heatmap-cell bg-primary/20"></div>
+<div class="heatmap-cell bg-primary/40"></div>
+<div class="heatmap-cell bg-slate-200 dark:bg-slate-800"></div>
+<div class="heatmap-cell bg-primary/10"></div>
+<div class="heatmap-cell bg-primary/60"></div>
+<div class="heatmap-cell bg-primary/90"></div>
+<div class="heatmap-cell bg-primary"></div>
+<!-- Week 2 -->
+<div class="heatmap-cell bg-primary/80"></div>
+<div class="heatmap-cell bg-primary/40"></div>
+<div class="heatmap-cell bg-primary/60"></div>
+<div class="heatmap-cell bg-primary/20"></div>
+<div class="heatmap-cell bg-primary/90"></div>
+<div class="heatmap-cell bg-primary"></div>
+<div class="heatmap-cell bg-primary/70"></div>
+<!-- Week 3 -->
+<div class="heatmap-cell bg-primary/20"></div>
+<div class="heatmap-cell bg-slate-200 dark:bg-slate-800"></div>
+<div class="heatmap-cell bg-primary/10"></div>
+<div class="heatmap-cell bg-primary/40"></div>
+<div class="heatmap-cell bg-primary/60"></div>
+<div class="heatmap-cell bg-primary/90"></div>
+<div class="heatmap-cell bg-primary"></div>
+<!-- Week 4 -->
+<div class="heatmap-cell bg-primary/80"></div>
+<div class="heatmap-cell bg-primary/40"></div>
+<div class="heatmap-cell bg-primary/60"></div>
+<div class="heatmap-cell bg-primary/20"></div>
+<div class="heatmap-cell bg-primary/90"></div>
+<div class="heatmap-cell bg-primary"></div>
+<div class="heatmap-cell bg-primary/70"></div>
+</div>
+<div class="mt-4 flex justify-between items-center">
+<span class="text-[10px] text-slate-500 font-medium">Less active</span>
+<div class="flex gap-1">
+<div class="w-3 h-3 bg-slate-200 dark:bg-slate-800 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary/30 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary/60 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary rounded-sm"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-medium">Most active</span>
+</div>
+</div>
+</div>
+<!-- AI Forecast / Timeline Section -->
+<div class="px-4 py-4">
+<div class="rounded-2xl bg-primary text-white p-6 shadow-xl shadow-primary/20">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined">psychology</span>
+<h3 class="text-lg font-bold font-display">AI Forecast</h3>
+</div>
+<p class="text-primary-100/80 text-sm mb-6">Based on your velocity, you're ahead of schedule by 12 days.</p>
+<div class="relative pt-1">
+<div class="flex mb-2 items-center justify-between">
+<div>
+<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full bg-white/20">
+                                Current: Neural Architect
+                            </span>
+</div>
+<div class="text-right">
+<span class="text-xs font-semibold inline-block">
+                                65%
+                            </span>
+</div>
+</div>
+<div class="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-white/20">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-white" style="width:65%"></div>
+</div>
+</div>
+<div class="flex justify-between items-end mt-2">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase opacity-60">Completion Date</span>
+<span class="text-lg font-bold">Nov 14, 2024</span>
+</div>
+<button class="bg-white text-primary px-4 py-2 rounded-xl text-sm font-bold shadow-lg">
+                        Speed Up
+                    </button>
+</div>
+</div>
+</div>
+<!-- Recent Achievements -->
+<h2 class="text-lg font-bold leading-tight font-display px-4 pt-4 pb-2">Recent Milestones</h2>
+<div class="flex gap-4 px-4 overflow-x-auto no-scrollbar pb-6">
+<div class="min-w-[140px] flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+<div class="size-16 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30">
+<span class="material-symbols-outlined text-amber-500 text-3xl">emoji_events</span>
+</div>
+<p class="text-xs font-bold text-center">Logic Pro III</p>
+<p class="text-[10px] text-slate-500">2 days ago</p>
+</div>
+<div class="min-w-[140px] flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+<div class="size-16 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/30">
+<span class="material-symbols-outlined text-blue-500 text-3xl">bolt</span>
+</div>
+<p class="text-xs font-bold text-center">Velocity Surge</p>
+<p class="text-[10px] text-slate-500">Yesterday</p>
+</div>
+<div class="min-w-[140px] flex flex-col items-center gap-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+<div class="size-16 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
+<span class="material-symbols-outlined text-emerald-500 text-3xl">verified</span>
+</div>
+<p class="text-xs font-bold text-center">Ethics Expert</p>
+<p class="text-[10px] text-slate-500">5 days ago</p>
+</div>
+</div>
+</main>
+<!-- Navigation Tab Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 py-3 z-50">
+<div class="max-w-md mx-auto flex justify-between items-center">
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-[10px] font-medium">Learn</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">analytics</span>
+<span class="text-[10px] font-bold">Insights</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</nav>
+</body></html>

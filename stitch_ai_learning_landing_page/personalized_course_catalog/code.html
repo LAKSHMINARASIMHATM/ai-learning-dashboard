@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Personalized Course Catalog</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(40, 46, 57, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .match-badge {
+            background: linear-gradient(135deg, #135bec 0%, #3b82f6 100%);
+            box-shadow: 0 4px 12px rgba(19, 91, 236, 0.3);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 pt-6 pb-2">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div>
+<h1 class="text-xl font-bold leading-none tracking-tight">AI Catalog</h1>
+<p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">Adaptive Learning</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-800">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyu4ngl6FksULWRTGkfKU4l4Ed5fKcjvWcIXiU_ZjGW5f0GhCam2ujTuuP6n6v9ou8ZIbu9fMGwompJIx08RQdZfXnuGuv66DkcGwiC1V2TIAXMElAejLzl3rO4p6bvvjcfWHRA68q39_RzT7nHlJMvtzW0dXj_Ei6JZ_xyXplvRQ4KnpzfN4Hn5vz5SVfammw_IlqpeA6lieQYEOW4CsO6ir_SnLdWAGzbH7OJt8XL4u1o66SCKuFDC9SaoYIftdIJArxqEuB68M"/>
+</button>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="relative w-full">
+<label class="flex items-center w-full h-12 bg-white dark:bg-slate-800 rounded-xl px-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+<span class="material-symbols-outlined text-slate-400 mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-slate-400" placeholder="Search for skills or courses..." type="text"/>
+<span class="material-symbols-outlined text-primary">tune</span>
+</label>
+</div>
+<!-- Scrollable Chips -->
+<div class="flex gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-primary text-white px-4 text-sm font-medium">
+                All Matches
+            </button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 text-sm font-medium">
+                Data Science
+                <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 text-sm font-medium">
+                AI Engineering
+                <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 text-sm font-medium">
+                Design
+                <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+</header>
+<main class="px-4 pb-24">
+<!-- Section Header -->
+<div class="flex items-center justify-between py-4">
+<h3 class="text-lg font-bold">Top Picks for You</h3>
+<button class="text-primary text-sm font-medium">See All</button>
+</div>
+<!-- Course Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col group">
+<div class="relative aspect-video w-full">
+<img class="w-full h-full object-cover" data-alt="Neural network visualization" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4_mGji3rrZsWIdSmZr1WTlk9rdJqqbYOWGfxdIRp9TFStz2QvnOm0F1s3s3bF3rx_EI_klSZtSOOe5T7i_oxB3iSYtGzPzYhWjKqdj3VnvOYSrY4ke5yPUDkUpAq8Rbmq74KUxzIZ-3vMwq-spBZC_US0xO3Tp9chbsJt8pbgBuGJlJGH-M-HjxIVgt6tZxra2xNFsarOvfLdDeZbOIstU-BCvO7Jhwu-LVose2ZayXvR3BQAJRshhnNeDhiUmTI0naSqkXeZtzg"/>
+<div class="absolute top-3 right-3 match-badge text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+                        98% AI MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Intermediate</span>
+<span class="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+<span class="material-symbols-outlined text-xs">schedule</span> 12.5 hrs
+                        </span>
+</div>
+<h4 class="text-base font-bold leading-tight group-hover:text-primary transition-colors">Advanced Neural Architectures</h4>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Master the latest in transformer models and self-attention mechanisms.</p>
+<button class="mt-2 w-full bg-primary text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                        Start Curriculum
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col group">
+<div class="relative aspect-video w-full">
+<img class="w-full h-full object-cover" data-alt="Cybersecurity concept digital interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWc9l66RiLh-VYQN48OLVl6UCraO7ctlSvjaQ6A_Jr7_IXXmZk2KuDgQAG83sYBPNT9UfZPG3Uh3KI4BjMHTdf1x5LYenuN-MQ2F3nnleLDY_8C-LN_GZZ_wfJba9wQVujD5GQOt-nEadLejIM2XW6W_oGqRI1D_KScl1NqO-gq62_bZFuzp8I69TK5T6MWvVP_RnGOvt6HVoOZ2Leu4foTMUS4EfMS809kh19yugnHmDTFh0naK2A0PimKyX15DT95nDZb5Xxm6Q"/>
+<div class="absolute top-3 right-3 match-badge text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+                        95% AI MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider">Beginner</span>
+<span class="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+<span class="material-symbols-outlined text-xs">schedule</span> 8 hrs
+                        </span>
+</div>
+<h4 class="text-base font-bold leading-tight group-hover:text-primary transition-colors">Ethical AI Foundations</h4>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Learn the moral implications of large scale automated decision making.</p>
+<button class="mt-2 w-full bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white py-2 rounded-lg text-sm font-bold">
+                        View Details
+                    </button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col group">
+<div class="relative aspect-video w-full">
+<img class="w-full h-full object-cover" data-alt="Data dashboard analytics" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFgTZ3Dmpnj8jUexnHOAVXxv6qu4FPD3qjK4PQe1ehGlQLi9x0sK7HnO1t4KSgsoiJtkHpUTaX0iAeqeCx6LGIACQSG02rbL7yWfwU8xTSrsMysQxbOSAyZ4OCdy2bOEvQ3MatWxly0yWzdhzG_uGn8A256yPeDR8vak9SwPNJwfFD8QPdlxdaIUFCemt748slqvK2yBSV8pFSZC_x6Gh2kpJ9BylqzHwcMWuNVI9lciq6zVkddlhFBCbQSxTshqPNYH4YzeP4Erw"/>
+<div class="absolute top-3 right-3 match-badge text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+                        92% AI MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">Advanced</span>
+<span class="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+<span class="material-symbols-outlined text-xs">schedule</span> 24 hrs
+                        </span>
+</div>
+<h4 class="text-base font-bold leading-tight group-hover:text-primary transition-colors">Data Science Lifecycle</h4>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">End-to-end data pipeline construction for production-level AI apps.</p>
+<button class="mt-2 w-full bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white py-2 rounded-lg text-sm font-bold">
+                        View Details
+                    </button>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col group">
+<div class="relative aspect-video w-full">
+<img class="w-full h-full object-cover" data-alt="Design system layout grid" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdXSqIWivO31EcWOUmP4QB9mCFU7gC9Zgh-2xaqc9YIWOl3XhT1NOTzb1UgOw6LeqJ-h0kbAns9g2_N-hfGW4fo9cQ1AGxq_UFNyu8Xs8KSSwFr65dtzmio9kYglzMUdh5cwfsVVbT4SIz2Mah-4ZALqqjvRY0jfqDXQlB1fdXtmXXogG5NGVHnWpk76Q2JxUQf-OgFYZHFGvXyNrK1oo8JWGnvwdaY3Txp7k7ScIvGW7K6Xj7a5QXRVTOBsotXBVr7irObrI3G8I"/>
+<div class="absolute top-3 right-3 match-badge text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+                        89% AI MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Intermediate</span>
+<span class="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+<span class="material-symbols-outlined text-xs">schedule</span> 15 hrs
+                        </span>
+</div>
+<h4 class="text-base font-bold leading-tight group-hover:text-primary transition-colors">Generative UI Systems</h4>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Using AI to scale and automate design language systems.</p>
+<button class="mt-2 w-full bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white py-2 rounded-lg text-sm font-bold">
+                        View Details
+                    </button>
+</div>
+</div>
+</div>
+<!-- Section Header 2 -->
+<div class="flex items-center justify-between py-6">
+<h3 class="text-lg font-bold">Recommended for your Style</h3>
+</div>
+<!-- Learning Style Selection -->
+<div class="bg-primary/5 rounded-xl p-4 border border-primary/10 mb-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary">auto_fix_high</span>
+<p class="text-sm font-medium">Your current preference: <span class="text-primary font-bold">Visual &amp; Interactive</span></p>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="text-xs bg-white dark:bg-slate-800 p-2 rounded-lg text-center border border-slate-200 dark:border-slate-700">Video Tutorials</button>
+<button class="text-xs bg-white dark:bg-slate-800 p-2 rounded-lg text-center border border-slate-200 dark:border-slate-700">Practical Labs</button>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (iOS Style) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between z-50">
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1">explore</span>
+<span class="text-[10px] font-bold">Catalog</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined text-2xl">school</span>
+<span class="text-[10px] font-medium">Learning</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</nav>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

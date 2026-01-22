@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Skill Gap Analysis Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#4F46E5", // Indigo-600 - more vibrant
+                    "primary-dark": "#4338ca",
+                    "secondary": "#06b6d4", // Cyan-500
+                    "background-light": "#F3F4F6", // Gray-100
+                    "background-dark": "#0B0F19",
+                    "card-light": "#ffffff",
+                    "card-dark": "#151b28",
+                    "text-main-light": "#1e293b", // Slate-800
+                    "text-main-dark": "#f8fafc",
+                    "text-sub-light": "#64748b", // Slate-500
+                    "text-sub-dark": "#94a3b8",
+                },
+                fontFamily: {
+                    "display": ["Space Grotesk", "sans-serif"],
+                    "body": ["Inter", "sans-serif"]
+                },
+                boxShadow: {
+                    'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                    'glow': '0 0 15px rgba(79, 70, 229, 0.3)'
+                }
+            },
+        },
+    }
+</script>
+<style>.no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    body {
+        font-family: "Inter", sans-serif;
+    }
+    h1, h2, h3, h4, .font-display {
+        font-family: "Space Grotesk", sans-serif;
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-body antialiased transition-colors duration-200 selection:bg-indigo-500/30">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-28">
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50">
+<div class="flex items-center justify-between px-6 py-4">
+<button class="flex size-10 items-center justify-center rounded-full bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<h1 class="text-xl font-bold leading-tight tracking-tight text-center font-display">Skill Gap Analysis</h1>
+<button class="flex size-10 items-center justify-center rounded-full bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="px-6 pb-4">
+<div class="flex justify-between items-end mb-2">
+<span class="text-xs font-semibold uppercase tracking-wider text-text-sub-light dark:text-text-sub-dark">Role Readiness</span>
+<span class="text-xs font-bold text-primary dark:text-indigo-400">78% Complete</span>
+</div>
+<div class="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 w-[78%] rounded-full shadow-glow"></div>
+</div>
+</div>
+</header>
+<div class="px-6 pt-6 pb-2">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-primary text-[20px]">verified</span>
+</div>
+<select class="w-full appearance-none rounded-2xl border-0 bg-white dark:bg-card-dark py-4 pl-12 pr-10 text-lg font-bold shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-primary transition-all cursor-pointer text-text-main-light dark:text-white" id="role-select">
+<option>Senior Product Designer</option>
+<option>Product Manager</option>
+<option>UX Researcher</option>
+</select>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-sub-light dark:text-text-sub-dark">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 px-6 py-4">
+<div class="flex justify-between items-end">
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-text-sub-light dark:text-text-sub-dark mb-1">Skills Overview</p>
+<div class="flex items-baseline gap-2">
+<span class="text-sm font-medium text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-100 dark:border-emerald-500/20">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    +5% Growth
+                </span>
+</div>
+</div>
+<div class="flex gap-4 text-xs font-medium">
+<div class="flex items-center gap-2">
+<span class="size-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></span>
+<span class="text-text-sub-light dark:text-text-sub-dark">Current</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
+<span class="text-text-sub-light dark:text-text-sub-dark">Target</span>
+</div>
+</div>
+</div>
+<div class="relative mt-2 flex min-h-[260px] w-full items-center justify-center rounded-3xl bg-white/70 dark:bg-gray-800/40 backdrop-blur-xl shadow-glass border border-white/60 dark:border-gray-700/50 p-6 overflow-hidden">
+<div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-10 -right-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<svg class="w-full h-full max-h-[280px] relative z-10 drop-shadow-sm" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+<g class="dark:stroke-gray-700/50" fill="none" stroke="#e2e8f0" stroke-width="1">
+<circle cx="150" cy="150" r="30"></circle>
+<circle cx="150" cy="150" r="60"></circle>
+<circle cx="150" cy="150" r="90"></circle>
+<circle cx="150" cy="150" r="120"></circle>
+<line x1="150" x2="150" y1="150" y2="30"></line>
+<line x1="150" x2="264" y1="150" y2="112"></line>
+<line x1="150" x2="222" y1="150" y2="249"></line>
+<line x1="150" x2="78" y1="150" y2="249"></line>
+<line x1="150" x2="36" y1="150" y2="112"></line>
+</g>
+<g class="text-[11px] fill-current text-text-sub-light dark:text-text-sub-dark font-semibold font-display tracking-wide" text-anchor="middle">
+<text x="150" y="20">Design</text>
+<text x="280" y="115">Coding</text>
+<text x="235" y="270">Strategy</text>
+<text x="65" y="270">Research</text>
+<text x="20" y="115">Mgmt</text>
+</g>
+<path class="drop-shadow-lg" d="M150 60 L240 120 L200 220 L100 230 L70 130 Z" fill="url(#gradientPrimary)" stroke="#4F46E5" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M150 30 L260 110 L220 250 L75 250 L36 110 Z" fill="none" opacity="0.8" stroke="#06b6d4" stroke-dasharray="6 4" stroke-linejoin="round" stroke-width="2"></path>
+<defs>
+<radialGradient cx="150" cy="150" gradientUnits="userSpaceOnUse" id="gradientPrimary" r="120">
+<stop offset="0" stop-color="#4F46E5" stop-opacity="0.25"></stop>
+<stop offset="1" stop-color="#4F46E5" stop-opacity="0.05"></stop>
+</radialGradient>
+</defs>
+</svg>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 px-6 mb-6">
+<div class="flex flex-col gap-2 rounded-2xl bg-white dark:bg-card-dark p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-center gap-2">
+<span class="flex size-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-500">
+<span class="material-symbols-outlined text-[20px]">priority_high</span>
+</span>
+<p class="text-xs font-semibold text-text-sub-light dark:text-text-sub-dark uppercase tracking-wide">Critical</p>
+</div>
+<p class="text-3xl font-bold tracking-tight text-text-main-light dark:text-white font-display">3</p>
+</div>
+<div class="flex flex-col gap-2 rounded-2xl bg-white dark:bg-card-dark p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-center gap-2">
+<span class="flex size-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500">
+<span class="material-symbols-outlined text-[20px]">school</span>
+</span>
+<p class="text-xs font-semibold text-text-sub-light dark:text-text-sub-dark uppercase tracking-wide">Hours</p>
+</div>
+<p class="text-3xl font-bold tracking-tight text-text-main-light dark:text-white font-display">12.5</p>
+</div>
+</div>
+<div class="px-6 mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-xl font-bold text-text-main-light dark:text-white font-display">Priority Gaps</h3>
+<button class="text-sm font-semibold text-primary hover:text-primary-dark">View All</button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="rounded-2xl bg-white dark:bg-card-dark p-5 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[80px] text-rose-500">analytics</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-lg font-bold text-text-main-light dark:text-white font-display">Advanced Data Analysis</p>
+<p class="text-xs text-text-sub-light dark:text-text-sub-dark mt-1 font-medium">Critical for Senior Level</p>
+</div>
+<span class="inline-flex items-center rounded-lg bg-rose-50 dark:bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20">High Priority</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative h-2.5 flex-1 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+<div class="absolute left-0 top-0 h-full w-[45%] bg-gradient-to-r from-rose-500 to-orange-400 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.4)]"></div>
+<div class="absolute left-[80%] top-0 h-full w-0.5 bg-black dark:bg-white z-10 opacity-30"></div>
+</div>
+<span class="text-sm font-bold text-text-main-light dark:text-white w-10 text-right font-display">-35%</span>
+</div>
+<div class="flex justify-between mt-2 text-[10px] uppercase font-bold tracking-wider text-text-sub-light/60">
+<span>Current</span>
+<span>Target</span>
+</div>
+</div>
+</div>
+<div class="rounded-2xl bg-white dark:bg-card-dark p-5 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[80px] text-amber-500">lightbulb</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-lg font-bold text-text-main-light dark:text-white font-display">Strategic Planning</p>
+<p class="text-xs text-text-sub-light dark:text-text-sub-dark mt-1 font-medium">Leadership Competency</p>
+</div>
+<span class="inline-flex items-center rounded-lg bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">Med Priority</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative h-2.5 flex-1 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+<div class="absolute left-0 top-0 h-full w-[60%] bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.4)]"></div>
+<div class="absolute left-[75%] top-0 h-full w-0.5 bg-black dark:bg-white z-10 opacity-30"></div>
+</div>
+<span class="text-sm font-bold text-text-main-light dark:text-white w-10 text-right font-display">-15%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+</div>
+<div>
+<h3 class="text-xl font-bold text-text-main-light dark:text-white font-display">Bridge the Gap</h3>
+<p class="text-xs text-text-sub-light dark:text-text-sub-dark font-medium mt-0.5">AI-recommended modules to close gaps</p>
+</div>
+</div>
+<div class="flex overflow-x-auto gap-5 no-scrollbar pb-8 -mx-6 px-6 snap-x">
+<div class="snap-center min-w-[280px] max-w-[280px] rounded-3xl bg-white dark:bg-card-dark shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col group transition-transform hover:-translate-y-1 duration-300">
+<div class="relative h-36">
+<div class="absolute inset-0 bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600" data-alt="Abstract gradient"></div>
+<div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
+<div class="absolute top-3 left-3 flex gap-2">
+<div class="bg-white/95 dark:bg-black/80 backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-full text-indigo-600 flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px]">star</span> AI PICK
+                     </div>
+</div>
+<div class="absolute bottom-3 left-3">
+<div class="bg-black/30 backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg text-white border border-white/20 uppercase tracking-wide">
+                        Intermediate Mastery
+                     </div>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-1">
+<p class="text-xs font-bold text-indigo-500 mb-1.5 uppercase tracking-wide">Data Science</p>
+<h4 class="text-lg font-bold text-text-main-light dark:text-white mb-3 leading-snug font-display">Data Science for Designers</h4>
+<div class="flex items-center gap-3 text-xs text-text-sub-light dark:text-text-sub-dark mb-4 font-medium">
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 2h 30m
+                    </span>
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">videocam</span> 12 Lessons
+                    </span>
+</div>
+<div class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between">
+<div class="flex items-center">
+<div class="flex -space-x-2 mr-2">
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqNiAUoBRTTZdXXOx7oco8lRb6J7bLlbFMwhs25zpog06GmBrIvKU5Y5jRKtOfgSC-1avId9Wn2hwuuDqdTf23jmI04HUyU-yvQv65RRmRrY5rzh2tn1Bbi3oeDpfRkj0HwnZ4_3h8KoTAS2xbzaPTeOGWHUW8PfaCf2ER3NhrHGF7dwJoOGrVrZXxjuONtuJL0X9hECyxOHJXDctvQ_tlcPNXxuYXeyEp8ZZwvExzAGYq20eX795ojRwNs9ay7a7-_cQ02MmxVd4"/>
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz5x_cURjO7pSWK9sPraANMU1Bhvv_FMj92-q3sVb_Q0E8d52svP8OX36ubdTD9iXKXJuk5nt3ieUbJjGxqvxIfj3VJWJN75hx3W9t00jbk_nuaYKYQUz9TQnaN8kD-38dK2hqWqVs08CsH7iHS_7laUnDjAOmvSPHj7HEcR-g0GUrW4JE6RMCIlIzFPfgnXTX8dyYXSxVpM4LNWj0ltIlrdEetSZKuqetQH9UOaWN6Ngi9H0EfvmrLKXmBNYQbZXwxAWeecDcOio"/>
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4n9ZSJJD_Et067F0-otQybyZVZPje6NJlfD8BiEQ9xryZNXl3rKX7GOrgTrIleUdHUK7NimR2uO10EP8ptzAbCibmnjiGIM-bioZT7_12x7l7R7-I8xHAPqrClbKMOOtEjdQe6H67_cCFzji2xrlFADQSDfbWixzirgRFzvCD2TACxK5ZIOWw3F0JcS82x2hpSaq2fTHA0G3sL0uS5JYRiBcUn2vCpOQid9m8IY_nRmMmLHBKIQ1LhimbuP_rboJMN3qLsgQkUmY"/>
+</div>
+<span class="text-[10px] text-text-sub-light font-semibold">+42 taking this</span>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="snap-center min-w-[280px] max-w-[280px] rounded-3xl bg-white dark:bg-card-dark shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col group transition-transform hover:-translate-y-1 duration-300">
+<div class="relative h-36">
+<div class="absolute inset-0 bg-gradient-to-tr from-teal-500 via-emerald-500 to-green-500"></div>
+<div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
+<div class="absolute bottom-3 left-3">
+<div class="bg-black/30 backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg text-white border border-white/20 uppercase tracking-wide">
+                        Advanced Mastery
+                     </div>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-1">
+<p class="text-xs font-bold text-teal-600 mb-1.5 uppercase tracking-wide">Management</p>
+<h4 class="text-lg font-bold text-text-main-light dark:text-white mb-3 leading-snug font-display">Product Strategy 101</h4>
+<div class="flex items-center gap-3 text-xs text-text-sub-light dark:text-text-sub-dark mb-4 font-medium">
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 1h 45m
+                    </span>
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">article</span> 8 Articles
+                    </span>
+</div>
+<div class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between">
+<div class="flex items-center">
+<div class="flex -space-x-2 mr-2">
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBILoHBUyMJxj3iPLJrFpMmhlxZI-vwDITZzwecroxa8u34aRJ9CDhnjPQxCyGbEK0ufoqo4Y-2yNssD1mtwjz5UrHAoRkPVkd-TBf-MQ4eUIyh4ep7ZYa-O3ZPY1ijRQYCD85VLPN9gTvO6DssACCjeAU1CiMYQ3ZjP6_jVXK8uW2epGUEiETisvvDeW-68AXayLiYhd609MmPSpecS1D16GcGzcyJpANxLnr0IHcRqe2r3rdgnZC5oJg-qWC3MUdRWj5f7J_C6Qc"/>
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrwumO0aBpBkp4VbkMTheAUbcFCHN9JnXmaarQ74Lq0nmrBkKjvUiNjFpEnVTvQXdzFUOpvMo4sZHQHHZu1SZCCT-5QOEKka4zoyU1HFcg9Re484-UJJTYYpoLXr4aiYyQbvY7s8cf2j_pOlYM1deNx9-evOclXviTJjypz4iEfLBeOW0KEhidpN605DJET8EzJDVoUcqnoU9_DaOHIc4eAY2y-eItNGifIm-QwESrTGPqeJ2WS_0KyiyVDfdmOUnmIv9CIlfwG9A"/>
+</div>
+<span class="text-[10px] text-text-sub-light font-semibold">+18 taking this</span>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="snap-center min-w-[280px] max-w-[280px] rounded-3xl bg-white dark:bg-card-dark shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col group transition-transform hover:-translate-y-1 duration-300">
+<div class="relative h-36">
+<div class="absolute inset-0 bg-gradient-to-tr from-orange-500 via-amber-500 to-yellow-500"></div>
+<div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
+<div class="absolute bottom-3 left-3">
+<div class="bg-black/30 backdrop-blur-md text-[10px] font-bold px-2.5 py-1 rounded-lg text-white border border-white/20 uppercase tracking-wide">
+                        Beginner Mastery
+                     </div>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-1">
+<p class="text-xs font-bold text-orange-600 mb-1.5 uppercase tracking-wide">Research</p>
+<h4 class="text-lg font-bold text-text-main-light dark:text-white mb-3 leading-snug font-display">A/B Testing Mastery</h4>
+<div class="flex items-center gap-3 text-xs text-text-sub-light dark:text-text-sub-dark mb-4 font-medium">
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 45m
+                    </span>
+<span class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">quiz</span> 3 Quizzes
+                    </span>
+</div>
+<div class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between">
+<div class="flex items-center">
+<div class="flex -space-x-2 mr-2">
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApaD1YRTI_lkxqiIrHB3G8eILchcZ2Yd1SLWrkSGSBzpBeB2jGJOCGmHd-2KU9Nyjfk6q_iNyYTPAlAelCPd31r89Ly_rT07ijMoQnzzD1WFKm8pFR9dSHv3ZGuyyeBAp1jGftd5R5s3Ia71VW0qpaAR0LME1AEUNXg7PUEp0dV6rSI44AVV_6Ec83wla9rzAOE3RRZMyiPaKmC-quG7ZENZ4qvqrg28DAghUzbb1wDhOq8ud7VqC_MKCCRh9mnO27IteNKxigjp0"/>
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg4raFbmBNQnYnXwuNEkpvLHh6-A1UWk3onKTJw6L01UTDCUNAKKUXeGsbp1LDjphE9ApPbdiqc7jTPBMVRJNUeNVMSpqE4KfG1nNuvPC_KtlfhN6u2oFglqj_Fk1-qSx0WgoXjYowvE-NVO82nheRdkjoxlLCZet65ZaEpTc50Wcsv-YzZP3giUQJ8_llhQqf6a23VfLDy83yT2fBMKRCXtdvi2oZJpbT8Rvo_dIIp5Ps0q8mYj273j7PJlWaDFC3wyYpHt9KXpU"/>
+<img alt="" class="inline-block size-6 rounded-full ring-2 ring-white dark:ring-card-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAE2SNofBDYtC_h8YYUjqfSuYp9k06cKQa5OkKtUdO_E0GquzRgahnQveZWdKJy28Gy3kmf0CHif041QbWayOhRnZoTtI8fhJnmIHNW5-wdTfXsUKKgaahGsjkSInaQeDq9EQYFmz970NrOmUBfkkrvz10tfNemFYsX_Jd8KOs5yp01V9tnaFJUZcaUQ3g0YGpC8AwLRwIZf1UwgWSbjMgIN7up1vf5askRJt-nk4wvSI-SKca1fMBrX5qBZXSUpISi4oLJO2sJG8"/>
+</div>
+<span class="text-[10px] text-text-sub-light font-semibold">+89 taking this</span>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<nav class="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-card-dark/90 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 px-6 py-1 z-50">
+<ul class="flex justify-between items-center">
+<li>
+<a class="flex flex-col items-center gap-1 p-3 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">home</span>
+</a>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 p-3 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">school</span>
+</a>
+</li>
+<li>
+<div class="relative -top-6">
+<a class="flex flex-col items-center justify-center size-14 rounded-full bg-primary text-white shadow-lg shadow-indigo-500/40 transition-transform hover:scale-105" href="#">
+<span class="material-symbols-outlined text-[28px] fill-current">analytics</span>
+</a>
+</div>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 p-3 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">groups</span>
+</a>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 p-3 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:-translate-y-0.5 transition-transform">person</span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+
+</body></html>

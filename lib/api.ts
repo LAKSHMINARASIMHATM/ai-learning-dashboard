@@ -1,0 +1,325 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+interface ApiResponse<T> {
+    success: boolean;
+    data?: T;
+    message?: string;
+    error?: string;
+}
+
+class ApiClient {
+    private token: string | null = null;
+
+    constructor() {
+        if (typeof window !== 'undefined') {
+            this.token = localStorage.getItem('token');
+        }
+    }
+
+    setToken(token: string) {
+        this.token = token;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('token', token);
+        }
+    }
+
+    clearToken() {
+        this.token = null;
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+        }
+    }
+
+    private async request<T>(
+        endpoint: string,
+        options: RequestInit = {}
+    ): Promise<ApiResponse<T>> {
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        };
+
+        if (this.token) {
+            (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers,
+            });
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'An error occurred',
+            };
+        }
+    }
+
+    // Auth endpoints
+    async register(name: string, email: string, password: string, learningPathId?: string) {
+        const result = await this.request<{ user: unknown; token: string }>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password, learningPathId }),
+        });
+        if (result.success && result.data?.token) {
+            this.setToken(result.data.token);
+        }
+        return result;
+    }
+
+    async login(email: string, password: string) {
+        const result = await this.request<{ user: unknown; token: string }>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+        });
+        if (result.success && result.data?.token) {
+            this.setToken(result.data.token);
+        }
+        return result;
+    }
+
+    async getMe() {
+        return this.request('/auth/me');
+    }
+
+    logout() {
+        this.clearToken();
+    }
+
+    // Progress endpoints
+    async getProgress() {
+        return this.request('/progress');
+    }
+
+    async updateProgress(data: Record<string, unknown>) {
+        return this.request('/progress', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async submitQuizScore(week: string, score: number) {
+        return this.request('/progress/quiz', {
+            method: 'POST',
+            body: JSON.stringify({ week, score }),
+        });
+    }
+
+    async logStudyTime(day: string, hours: number) {
+        return this.request('/progress/study-time', {
+            method: 'POST',
+            body: JSON.stringify({ day, hours }),
+        });
+    }
+
+    // Analytics endpoints
+    async getQuizScores() {
+        return this.request('/analytics/quiz-scores');
+    }
+
+    async getStudyTime() {
+        return this.request('/analytics/study-time');
+    }
+
+    async getImprovement() {
+        return this.request('/analytics/improvement');
+    }
+
+    async getAnalyticsSummary() {
+        return this.request('/analytics/summary');
+    }
+
+    // Learning Path endpoints
+    async getLearningPath() {
+        return this.request('/learning-path');
+    }
+
+    async updateLearningStep(stepId: number, status: string, progress: number) {
+        return this.request(`/learning-path/step/${stepId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ status, progress }),
+        });
+    }
+
+    async generateLearningPath(title: string, difficulty: string, topics: string[]) {
+        return this.request('/learning-path/generate', {
+            method: 'POST',
+            body: JSON.stringify({ title, difficulty, topics }),
+        });
+    }
+
+    // Resources endpoints
+    async getResources(filters?: { type?: string; difficulty?: string; topic?: string }) {
+        const params = new URLSearchParams();
+        if (filters?.type) params.append('type', filters.type);
+        if (filters?.difficulty) params.append('difficulty', filters.difficulty);
+        if (filters?.topic) params.append('topic', filters.topic);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/resources${query}`);
+    }
+
+    async getRecommendedResources() {
+        return this.request('/resources/user/recommended');
+    }
+
+    async getResource(id: string) {
+        return this.request(`/resources/${id}`);
+    }
+
+    // AI Assistant endpoints
+    async sendMessage(content: string) {
+        return this.request('/assistant/chat', {
+            method: 'POST',
+            body: JSON.stringify({ content }),
+        });
+    }
+
+    async getChatHistory() {
+        return this.request('/assistant/history');
+    }
+
+    async clearChatHistory() {
+        return this.request('/assistant/history', { method: 'DELETE' });
+    }
+
+    async getSuggestions() {
+        return this.request('/assistant/suggestions');
+    }
+
+    // Skill Gaps endpoints
+    async getSkillGaps() {
+        return this.request('/skill-gaps');
+    }
+
+    async submitAssessment(skills: Array<{ topic: string; currentLevel: number }>) {
+        return this.request('/skill-gaps/assessment', {
+            method: 'POST',
+            body: JSON.stringify({ skills }),
+        });
+    }
+
+    async getSkillRecommendations() {
+        return this.request('/skill-gaps/recommendations');
+    }
+
+    // User endpoints
+    async updateProfile(name: string, avatar?: string) {
+        return this.request('/user/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ name, avatar }),
+        });
+    }
+
+    async updateSettings(settings: {
+        theme?: string;
+        notifications?: boolean;
+        emailUpdates?: boolean;
+        language?: string;
+    }) {
+        return this.request('/user/settings', {
+            method: 'PUT',
+            body: JSON.stringify(settings),
+        });
+    }
+
+    // Quiz endpoints
+    async getQuizzes(topic?: string, difficulty?: string) {
+        const params = new URLSearchParams();
+        if (topic) params.append('topic', topic);
+        if (difficulty) params.append('difficulty', difficulty);
+        const query = params.toString() ? `?${params.toString()}` : '';
+        return this.request(`/quiz${query}`);
+    }
+
+    async getQuiz(quizId: string) {
+        return this.request(`/quiz/${quizId}`);
+    }
+
+    async submitQuizAttempt(quizId: string, answers: { questionId: string; selectedAnswer: string; timeSpentSeconds: number }[], timeSpentMinutes: number) {
+        return this.request(`/quiz/${quizId}/submit`, {
+            method: 'POST',
+            body: JSON.stringify({ answers, timeSpentMinutes }),
+        });
+    }
+
+    async getQuizHistory() {
+        return this.request('/quiz/history');
+    }
+
+    async getQuizAnalytics() {
+        return this.request('/quiz/analytics');
+    }
+
+    async getQuizRecommendations() {
+        return this.request('/quiz/recommendations');
+    }
+
+    // Learning Path Template endpoints
+    async getLearningPathTemplates() {
+        return this.request('/learning-path/templates');
+    }
+
+    async getLearningPathTemplate(templateId: string) {
+        return this.request(`/learning-path/templates/${templateId}`);
+    }
+
+    async startLearningPath(templateId: string) {
+        return this.request('/learning-path/start', {
+            method: 'POST',
+            body: JSON.stringify({ templateId }),
+        });
+    }
+
+    async updateChecklistItem(stepIndex: number, itemId: string, completed: boolean) {
+        return this.request(`/learning-path/checklist/${stepIndex}/${itemId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ completed }),
+        });
+    }
+
+    async completeStep(stepIndex: number) {
+        return this.request(`/learning-path/step/${stepIndex}/complete`, {
+            method: 'PUT',
+        });
+    }
+
+    async updateLearnerProfile(profile: {
+        preferredLearningTime?: { startHour: number; endHour: number; timezone: string };
+        learningPace?: string;
+        dailyGoalMinutes?: number;
+        weeklyGoalHours?: number;
+        interests?: string[];
+        careerGoals?: string[];
+    }) {
+        return this.request('/user/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ learnerProfile: profile }),
+        });
+    }
+
+    // Topic Progress endpoints
+    async updateTopicProgress(topicId: string, data: {
+        masteryLevel?: number;
+        timeSpentMinutes?: number;
+        lessonsCompleted?: number;
+        errorCount?: number;
+        retryCount?: number;
+    }) {
+        return this.request(`/progress/topic/${topicId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async getTopicProgress() {
+        return this.request('/progress/topics');
+    }
+}
+
+// Export singleton instance
+export const api = new ApiClient();
+export default api;

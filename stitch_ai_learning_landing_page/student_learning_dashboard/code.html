@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Student Learning Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ai-glow {
+            box-shadow: 0 0 15px 0px rgba(19, 91, 236, 0.15);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen pb-24">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border-2 border-primary/30 p-0.5">
+<div class="size-full rounded-full bg-center bg-cover" data-alt="Close up portrait of a smiling student" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmiGTUaPH-ATXTWcx2hW44djMt3rPZjUPBkyNH4nlqErlKa1YkZMnJ7sH-yK23SUoCNmouo3LzxLjAfHJZQPIquKvy7DTZOHERcmJZp6n1qK5xMDBdO5EErzqobwa8HwLbsaoXykRN2-atiGFvF5x9eFc2mzLRaXA8AAYlL8jDdfS75EO6QjMttdTFZmzS-fMCjC44GQgF3O3vVqLyXzVjkcXHOKY4-lU0Kffc1sQyovbK8Rz72Rfnd127ZKbOpMLJWPugU0r5-Rc");'></div>
+</div>
+<div>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Good Morning,</p>
+<h1 class="text-base font-bold leading-tight">Alex Rivera</h1>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="size-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-md mx-auto">
+<!-- Progress Overview -->
+<section class="p-4">
+<div class="bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700/50 ai-glow">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Weekly Progress</h2>
+<span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded-full">+12% this week</span>
+</div>
+<div class="flex items-center gap-6">
+<!-- Progress Circle Placeholder -->
+<div class="relative size-24 shrink-0 flex items-center justify-center">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-slate-100 dark:stroke-slate-700" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-xl font-bold">78%</span>
+</div>
+</div>
+<div class="flex-1 space-y-3">
+<div>
+<p class="text-2xl font-bold leading-none">12.5 hrs</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Time Spent Learning</p>
+</div>
+<div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+<div>
+<p class="text-2xl font-bold leading-none">24</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Concepts Mastered</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Continue Learning -->
+<section class="px-4 py-2">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-lg font-bold">Continue Learning</h2>
+<button class="text-primary text-sm font-semibold">View All</button>
+</div>
+<div class="relative overflow-hidden bg-slate-900 rounded-xl p-5 text-white">
+<!-- Background Image with Overlay -->
+<div class="absolute inset-0 opacity-40 bg-center bg-cover" data-alt="Abstract neural network background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAecQxEPjC9IJMgKd-xFSyfYsoCcAFhfYB8ySxupNR3zr1IDwa7mcLZXN0eHQZMiA0mKpkgQw6wmcQClN75CpEx9bmmfw39T7oAdac3Tw_5ZeDrpFmQYNmczdXV6YjVC2XkdGALWzRQRek83lDQ6V17YnzlcSRkn53Az_kZqI3qB5bST8R4yJbB9u20rhGNs45Lb72cwjD42gMDR96GTKp97N5N9TeqgdlvtG3JGm477-k_r53qHcmhxIygzMG25RZ36XeoNPSvrJo");'></div>
+<div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active Module</span>
+<span class="text-slate-300 text-xs">15 mins left</span>
+</div>
+<h3 class="text-xl font-bold mb-1">Advanced Quantum Mechanics</h3>
+<p class="text-slate-300 text-sm mb-4">Module 4: Wave-Particle Duality</p>
+<div class="flex items-center gap-4">
+<button class="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+                            Resume
+                        </button>
+<div class="flex-1">
+<div class="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- AI Recommendations Carousel -->
+<section class="py-6">
+<div class="px-4 mb-3">
+<h2 class="text-lg font-bold">Recommended for You</h2>
+<p class="text-xs text-slate-500 dark:text-slate-400">Personalized by your AI Tutor</p>
+</div>
+<div class="flex overflow-x-auto no-scrollbar gap-4 px-4">
+<!-- Card 1 -->
+<div class="flex-none w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+<div class="h-32 bg-center bg-cover relative" data-alt="Colorful geometric patterns representing data science" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBrDR6bXDF8BZh10Q4aWcUmR8LP8AOB71rvuOoXXysEgQfM62ieBhaxOcpcbadgS8afzxQLK48uLYNN2mASvnT-O4E2rIcTpN_CzL-dCp2xci58PE5CWcybecg2Y1TdcqzyY1gmMFZ1ep6i0Icn0HCe8Yn_ziR8R30Ax7YhI6-mAtmvj8dfrvSuRvYdg_zBLO9XENyIfqX9Kmjbb4pbBJmEVKwkNJZoObTY7dnvA-CA-CIDSbo7EDq6KmXgwelPAyEeDCmjLzsG7n0");'>
+<div class="absolute top-2 right-2 bg-black/50 backdrop-blur-md p-1.5 rounded-full text-white">
+<span class="material-symbols-outlined text-sm block">auto_awesome</span>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs text-primary font-bold mb-1">Based on Interests</p>
+<h4 class="font-bold text-sm leading-snug line-clamp-1">Data Science Fundamentals</h4>
+<div class="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 2.5h</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">equalizer</span> Intermediate</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="flex-none w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+<div class="h-32 bg-center bg-cover relative" data-alt="Close up of a computer screen with python code" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB9H5Ey57w7_4TqZ2mTggNHfV2VFLeqRZ1Nde-lqR2q6tsFm1fndl3z1EBrQmrD7evsZ841bPqnU1WEvbQofzGSU48Hldg9x44T7ooIRoN18sOGnrQea2taB2l8eyUtn1dqe1Ueb_fcmWJekONDbRMbdLKQeKrYskR_Pzw4KRqKO2KxdoomfzY1oQOFB8cOKKEhNYDpVuWqigsOIkx8JJm_NEJrDgz0l-CGwf2gV0o13vrEpQ8f8XuIYjo6NNw1zV8CtCLgWbHOHqk");'>
+<div class="absolute top-2 right-2 bg-black/50 backdrop-blur-md p-1.5 rounded-full text-white">
+<span class="material-symbols-outlined text-sm block">auto_awesome</span>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs text-primary font-bold mb-1">Skill Bridge</p>
+<h4 class="font-bold text-sm leading-snug line-clamp-1">Python for Automation</h4>
+<div class="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 1.8h</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">equalizer</span> Beginner</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="flex-none w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+<div class="h-32 bg-center bg-cover relative" data-alt="3D render of a molecule" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA2X4LxB0OAmOT7OvxD72n72yh2h8j9Wmmo_Cvn_Kiy3xzbKZVqS9mIGY0IdFqamub8ZHuui1LnokX9UY74XI1qjKmdr1kA23zNlp2LHsXQeG_0hIK7c5gD4HAm0KvHhfnsNDRTujgZT-vFGTiz-xMjkwJIi2NoN2ttNaTmoOq9PFyHM_TDosjg97d2FJ1iEM6Wuuu6yzrOvMSsRMQ-w7NNVCjjDu8FFaOt1Z2a3vuyOvSecJm4f4Jhduvv7-zGKcuqM-NxBYqFT-E");'>
+<div class="absolute top-2 right-2 bg-black/50 backdrop-blur-md p-1.5 rounded-full text-white">
+<span class="material-symbols-outlined text-sm block">auto_awesome</span>
+</div>
+</div>
+<div class="p-3">
+<p class="text-xs text-primary font-bold mb-1">Advanced Topic</p>
+<h4 class="font-bold text-sm leading-snug line-clamp-1">Molecular Biology</h4>
+<div class="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> 4.2h</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">equalizer</span> Expert</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Analytics Quick View -->
+<section class="px-4 pb-12">
+<h2 class="text-lg font-bold mb-3">Study Activity</h2>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-primary mb-2">history_edu</span>
+<p class="text-xl font-bold">18</p>
+<p class="text-xs text-slate-500">Quizzes Taken</p>
+</div>
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-green-500 mb-2">verified</span>
+<p class="text-xl font-bold">92%</p>
+<p class="text-xs text-slate-500">Avg. Score</p>
+</div>
+</div>
+</section>
+</main>
+<!-- AI Tutor FAB -->
+<button class="fixed bottom-24 right-4 size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/40 flex items-center justify-center z-30 ring-4 ring-white dark:ring-slate-900">
+<span class="material-symbols-outlined text-2xl">smart_toy</span>
+</button>
+<!-- Bottom Tab Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 pb-8 pt-3 px-6 z-40">
+<div class="flex items-center justify-between max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">grid_view</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="text-[10px] font-medium">Courses</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="text-[10px] font-medium">AI Tutor</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-medium">Analytics</span>
+</a>
+</div>
+</nav>
+</body></html>

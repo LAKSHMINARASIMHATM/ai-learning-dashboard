@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Interactive Tutor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3b4354;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white transition-colors duration-300">
+<div class="flex flex-col h-screen max-w-md mx-auto overflow-hidden border-x border-slate-200 dark:border-slate-800">
+<!-- TopAppBar -->
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between z-10 border-b border-slate-200 dark:border-slate-800">
+<div class="text-slate-900 dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<div class="flex-1 px-3">
+<h2 class="text-slate-900 dark:text-white text-base font-bold leading-tight tracking-tight">Quantum Entanglement</h2>
+<p class="text-xs text-slate-500 dark:text-slate-400">Module 4: Particle States</p>
+</div>
+<div class="flex w-10 items-center justify-end">
+<button class="flex cursor-pointer items-center justify-center rounded-lg h-10 w-10 bg-transparent text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Lesson Progress -->
+<div class="flex flex-col gap-2 p-4 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+<div class="flex gap-6 justify-between items-center">
+<p class="text-slate-700 dark:text-slate-300 text-xs font-medium uppercase tracking-wider">Lesson Progress</p>
+<p class="text-primary text-xs font-bold leading-normal">65%</p>
+</div>
+<div class="rounded-full bg-slate-200 dark:bg-slate-800 h-1.5 overflow-hidden">
+<div class="h-full rounded-full bg-primary" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Content Area (Educational Material) -->
+<div class="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-[#161d2b]">
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight px-4 pb-2 pt-6">Core Concepts</h3>
+<p class="text-slate-700 dark:text-slate-300 text-sm font-normal leading-relaxed pb-3 pt-1 px-4">
+                Quantum entanglement is a physical phenomenon that occurs when a pair or group of particles is generated, defined such that the quantum state of each particle cannot be described independently of the state of the others.
+            </p>
+<!-- Interactive Diagram Placeholder -->
+<div class="flex w-full @container py-3 px-4">
+<div class="w-full gap-1 overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-xl aspect-[16/9] flex relative group cursor-zoom-in">
+<div class="w-full bg-center bg-no-repeat bg-cover flex-1" data-alt="Schematic diagram of entangled photon pairs through a beam splitter" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDnvqwRSL-5SkXjB7tkLKb5113hkDUmff4Hc-Do6mPbBXqeF7cnA861YKYPTVkjgcoK4t4i8o3RAwIaS1H-xdLXs1aACRMoei0I-vuYZs5OyadcASQl72IBPW00l1AtxanVpO7DakKxhZfCwNRRgHC2Owl6otF0dLslvbupJTe3Rqz_a6X2p-Yts2ZO81Ayk1DSE8W1gMmZ52i_bVzYE0uMfmkcT47Ko0_XAHNVklmhNk6l_LCOsGo5heLha3v58kmCYIkbS-2xNG0");'></div>
+<div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<div class="bg-white/90 dark:bg-background-dark/90 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+<span class="material-symbols-outlined text-sm text-primary">chat</span>
+<span class="text-xs font-bold text-primary">Ask about this diagram</span>
+</div>
+</div>
+</div>
+</div>
+<p class="text-slate-700 dark:text-slate-300 text-sm font-normal leading-relaxed pb-6 pt-1 px-4">
+                Even when separated by a large distance, a measurement of one particle's property immediately influences the possible results of the other particle's state.
+            </p>
+</div>
+<!-- Chat Interface Section -->
+<div class="flex flex-col h-[50%] border-t-2 border-primary/20 bg-background-light dark:bg-background-dark shadow-[0_-10px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.3)]">
+<!-- Chat Scroll Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<!-- AI Message -->
+<div class="flex gap-3 max-w-[90%]">
+<div class="size-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white text-sm">smart_toy</span>
+</div>
+<div class="bg-white dark:bg-slate-800 p-3 rounded-xl rounded-tl-none border border-slate-200 dark:border-slate-700">
+<p class="text-sm leading-relaxed dark:text-slate-200">
+                            I see you're looking at the entanglement diagram. It illustrates how measuring <b>Particle A</b> instantly determines the state of <b>Particle B</b>. Ready for a quick concept check?
+                        </p>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex flex-row-reverse gap-3 max-w-[90%] ml-auto">
+<div class="size-8 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300 text-sm">person</span>
+</div>
+<div class="bg-primary text-white p-3 rounded-xl rounded-tr-none shadow-md">
+<p class="text-sm leading-relaxed">
+                            Sure, quiz me on how distance affects this.
+                        </p>
+</div>
+</div>
+<!-- AI Typing / Interaction -->
+<div class="flex gap-3 max-w-[90%]">
+<div class="size-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white text-sm">smart_toy</span>
+</div>
+<div class="bg-white dark:bg-slate-800 p-3 rounded-xl rounded-tl-none border border-slate-200 dark:border-slate-700">
+<p class="text-sm leading-relaxed dark:text-slate-200">
+                            Great! True or False: If we move Particle B to the other side of the galaxy, the entanglement effect is weakened by the distance.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Action Suggestions -->
+<div class="px-4 pb-2">
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<button class="whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold py-2 px-4 rounded-full hover:border-primary transition-colors">
+                        Help me understand this
+                    </button>
+<button class="whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold py-2 px-4 rounded-full hover:border-primary transition-colors">
+                        Explain diagram
+                    </button>
+<button class="whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold py-2 px-4 rounded-full hover:border-primary transition-colors">
+                        Give example
+                    </button>
+</div>
+</div>
+<!-- Input Bar -->
+<div class="p-4 pt-2 pb-6">
+<div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">attachment</span>
+</button>
+<input class="flex-1 bg-transparent border-none text-sm focus:ring-0 placeholder:text-slate-500 py-2" placeholder="Ask your AI tutor..." type="text"/>
+<button class="size-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Hidden CSS for scrollbar hiding on chips -->
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>
