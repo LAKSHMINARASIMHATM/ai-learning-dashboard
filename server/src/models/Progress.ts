@@ -49,7 +49,7 @@ const progressSchema = new Schema<IProgress>(
             lastAccessedAt: { type: Date, default: Date.now },
             status: {
                 type: String,
-                enum: ['not_started', 'in_progress', 'mastered'],
+                enum: ['not_started', 'in_progress', 'mastered', 'locked'],
                 default: 'not_started',
             },
         }],

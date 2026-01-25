@@ -1,10 +1,11 @@
 'use client';
 
-import React from "react"
-import { useState } from 'react';
+import React, { useState, useEffect } from "react"
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, Menu, ChevronDown } from 'lucide-react';
+import api from '@/lib/api';
+import { ModeToggle } from '@/components/mode-toggle';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: 'home' },
@@ -18,9 +19,55 @@ const navItems = [
   { label: 'Settings', href: '/settings', icon: 'settings' },
 ];
 
+interface UserData {
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [user, setUser] = useState<UserData | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // Try to get from local storage first for immediate display
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+
+        // Then fetch fresh data
+        const res = await api.getMe();
+        if (res.success && res.data) {
+          setUser(res.data as UserData);
+          // Update local storage
+          localStorage.setItem('user', JSON.stringify(res.data));
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = () => {
+    api.logout();
+    router.push('/login');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="flex h-screen bg-background text-foreground transition-colors duration-300">
@@ -69,7 +116,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Logout Removed */}
+        {/* Logout */}
+        <div className="p-4 border-t border-sidebar-border">
+          <button
+            onClick={handleLogout}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full text-sidebar-foreground/70 hover:bg-red-500/10 hover:text-red-500 group`}
+            title="Logout"
+          >
+            <LogOut size={24} />
+            {sidebarOpen && <span className="text-sm font-bold tracking-wide">Logout</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -91,19 +148,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           {/* User Profile */}
           <div className="flex items-center gap-4">
+            <ModeToggle />
             <button className="relative p-2 hover:bg-muted rounded-xl transition-all duration-200 group">
               <span className="material-symbols-outlined text-2xl text-foreground/70 group-hover:text-primary transition-colors">notifications</span>
               <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
             </button>
-            <button className="flex items-center gap-3 p-1.5 pr-4 hover:bg-muted rounded-full transition-all duration-200 border border-transparent hover:border-border">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md">
-                SA
-              </div>
-              <div className="hidden sm:flex flex-col items-start">
-                <span className="text-xs font-bold leading-none">Sarah A.</span>
-                <span className="text-[10px] text-foreground/50 font-medium">Pro Learner</span>
-              </div>
-            </button>
+
+            {user ? (
+              <Link href="/profile" className="flex items-center gap-3 p-1.5 pr-4 hover:bg-muted rounded-full transition-all duration-200 border border-transparent hover:border-border">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md">
+                  {getInitials(user.name)}
+                </div>
+                <div className="hidden sm:flex flex-col items-start">
+                  <span className="text-xs font-bold leading-none">{user.name}</span>
+                  <span className="text-[10px] text-foreground/50 font-medium">Student</span>
+                </div>
+              </Link>
+            ) : (
+              <Link href="/login" className="text-sm font-medium text-primary hover:underline">
+                Sign In
+              </Link>
+            )}
           </div>
         </header>
 
@@ -116,7 +181,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="p-6 sm:p-8 max-w-screen-2xl mx-auto">{children}</div>
         </main>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

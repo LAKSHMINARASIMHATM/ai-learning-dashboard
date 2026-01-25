@@ -7,6 +7,7 @@ import {
     getQuizHistory,
     getQuizAnalytics,
     getQuizRecommendations,
+    reseedQuizzes,
 } from '../controllers/quiz.controller';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.get('/', getQuizzes);
 router.get('/history', getQuizHistory);
 router.get('/analytics', getQuizAnalytics);
 router.get('/recommendations', getQuizRecommendations);
+router.post('/reseed', reseedQuizzes);
 router.get('/:id', getQuiz);
 router.post('/:id/submit', submitQuizAttempt);
 

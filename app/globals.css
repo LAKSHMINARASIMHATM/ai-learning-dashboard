@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&family=Comic+Neue:wght@300;400;700&display=swap');
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -37,7 +39,7 @@
   --sidebar-accent-foreground: oklch(0.2 0 0);
   --sidebar-border: oklch(0.93 0.02 250);
   --sidebar-ring: oklch(0.5 0.2 250);
-  
+
   /* AI Learning Landing Page Colors */
   --background-light: #f6f6f8;
   --background-dark: #101622;
@@ -118,22 +120,29 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  
+
   /* AI SaaS Enhancements */
   --color-ai-sparkle: #D946EF;
   --color-ai-accent: #8B5CF6;
-  
+
   --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.1);
   --shadow-neon: 0 0 20px rgba(19, 91, 236, 0.5);
-  
+
   --backdrop-blur-xs: 2px;
-  
+
   --animation-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animation-float: float 3s ease-in-out infinite;
-  
+
   @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-5px);
+    }
   }
 }
 
@@ -141,10 +150,17 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground font-sans;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display;
   }
 }

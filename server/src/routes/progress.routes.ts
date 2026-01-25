@@ -3,7 +3,8 @@ import {
     getProgress,
     updateProgress,
     submitQuizScore,
-    logStudyTime
+    logStudyTime,
+    getTopicProgress
 } from '../controllers/progress.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -15,5 +16,6 @@ router.get('/', getProgress);
 router.put('/', updateProgress);
 router.post('/quiz', submitQuizScore);
 router.post('/study-time', logStudyTime);
+router.get('/topics', getTopicProgress);
 
 export default router;

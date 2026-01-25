@@ -244,6 +244,32 @@ const generateRecommendations = (
     });
 };
 
+// @desc    Force reseed quizzes from question bank
+// @route   POST /api/quiz/reseed
+// @access  Private
+export const reseedQuizzes = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        // Delete all existing quizzes
+        await Quiz.deleteMany({});
+
+        // Build and insert new quizzes
+        const quizzes = buildQuizzesFromBank();
+        await Quiz.insertMany(quizzes);
+
+        res.status(200).json({
+            success: true,
+            message: `Reseeded ${quizzes.length} quizzes successfully`,
+            count: quizzes.length,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getResourcesForTopic = (topic: string, level: string) => {
     const resources: Record<string, Record<string, { title: string; type: string; url: string }[]>> = {
         JavaScript: {
@@ -382,8 +408,14 @@ export const submitQuizAttempt = async (
     next: NextFunction
 ): Promise<void> => {
     try {
+        console.log('Quiz submission body:', JSON.stringify(req.body, null, 2));
         const { answers, timeSpentMinutes } = req.body;
         const quizId = req.params.id;
+
+        if (!Array.isArray(answers)) {
+            res.status(400).json({ success: false, error: 'Answers must be an array' });
+            return;
+        }
 
         const quiz = await Quiz.findById(quizId);
 
@@ -450,8 +482,11 @@ export const submitQuizAttempt = async (
         // Update user progress
         const progress = await Progress.findOne({ userId: req.user?._id });
         if (progress) {
+            const createdAt = progress.createdAt || new Date();
+            const weekNum = Math.ceil((new Date().getTime() - createdAt.getTime()) / (7 * 24 * 60 * 60 * 1000)) || 1;
+
             progress.quizScores.push({
-                week: `Week ${Math.ceil((new Date().getTime() - progress.createdAt.getTime()) / (7 * 24 * 60 * 60 * 1000))}`,
+                week: `Week ${weekNum}`,
                 quizId: quizId,
                 score,
                 totalQuestions: quiz.questions.length,

@@ -223,7 +223,7 @@ export default function QuizPage() {
 
         return (
             <DashboardLayout>
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-4xl mx-auto">
                     <div className="mb-6">
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="text-2xl font-bold">{selectedQuiz.title}</h2>
@@ -296,46 +296,48 @@ export default function QuizPage() {
 
     return (
         <DashboardLayout>
-            <div className="mb-8">
-                <h2 className="text-3xl font-bold text-foreground mb-2">Skill Assessments</h2>
-                <p className="text-muted-foreground">
-                    Test your knowledge and get personalized learning paths based on your results.
-                </p>
-            </div>
+            <div className="max-w-7xl mx-auto">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Skill Assessments</h2>
+                    <p className="text-muted-foreground">
+                        Test your knowledge and get personalized learning paths based on your results.
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quizzes.map((quiz) => (
-                    <Card key={quiz._id} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <div className="flex justify-between items-start mb-2">
-                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${quiz.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
-                                    quiz.difficulty === 'intermediate' ? 'bg-blue-100 text-blue-800' :
-                                        'bg-purple-100 text-purple-800'
-                                    }`}>
-                                    {quiz.difficulty}
-                                </span>
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <RefreshCcw className="w-3 h-3" /> {quiz.timeLimit} mins
-                                </span>
-                            </div>
-                            <CardTitle className="text-xl">{quiz.title}</CardTitle>
-                            <CardDescription className="line-clamp-2">{quiz.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2 mb-6">
-                                <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-medium">
-                                    {quiz.topic}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    {quiz.questions.length} Questions
-                                </span>
-                            </div>
-                            <Button className="w-full" onClick={() => startQuiz(quiz)}>
-                                Start Assessment
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {quizzes.map((quiz) => (
+                        <Card key={quiz._id} className="hover:shadow-lg transition-shadow">
+                            <CardHeader>
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${quiz.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
+                                        quiz.difficulty === 'intermediate' ? 'bg-blue-100 text-blue-800' :
+                                            'bg-purple-100 text-purple-800'
+                                        }`}>
+                                        {quiz.difficulty}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <RefreshCcw className="w-3 h-3" /> {quiz.timeLimit} mins
+                                    </span>
+                                </div>
+                                <CardTitle className="text-xl">{quiz.title}</CardTitle>
+                                <CardDescription className="line-clamp-2">{quiz.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center gap-2 mb-6">
+                                    <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-medium">
+                                        {quiz.topic}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {quiz.questions.length} Questions
+                                    </span>
+                                </div>
+                                <Button className="w-full" onClick={() => startQuiz(quiz)}>
+                                    Start Assessment
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
         </DashboardLayout>
     );

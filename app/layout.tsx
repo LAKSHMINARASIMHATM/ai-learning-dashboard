@@ -1,18 +1,7 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Space_Grotesk, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-const spaceGrotesk = Space_Grotesk({ 
-  subsets: ["latin"],
-  variable: '--font-display',
-});
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-sans',
-});
 
 export const metadata: Metadata = {
   title: 'LearnHub - AI-Driven Personalized Learning',
@@ -37,19 +26,31 @@ export const metadata: Metadata = {
   },
 }
 
+import { ThemeProvider } from '@/components/theme-provider'
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-sans antialiased">
-        {children}
-        <Analytics />
+      <body className="antialiased" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   )

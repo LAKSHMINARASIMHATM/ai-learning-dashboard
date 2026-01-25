@@ -62,6 +62,42 @@ export interface AuthRequest extends Request {
     user?: IUser;
 }
 
+// Token Types
+export interface TokenPayload {
+    id: string;
+    type: 'access' | 'refresh';
+    iat?: number;
+    exp?: number;
+}
+
+export interface AuthTokens {
+    accessToken: string;
+    refreshToken: string;
+}
+
+// Refresh Token Types
+export interface IRefreshToken extends Document {
+    userId: Types.ObjectId;
+    token: string;
+    expiresAt: Date;
+    isRevoked: boolean;
+    deviceInfo?: {
+        userAgent?: string;
+        ip?: string;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// Token Blacklist Types
+export interface ITokenBlacklist extends Document {
+    token: string;
+    expiresAt: Date;
+    reason: 'logout' | 'revoked' | 'security';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 // Topic Progress Types
 export interface ITopicProgress {
     topicId: string;

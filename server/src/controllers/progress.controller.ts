@@ -17,11 +17,13 @@ export const getProgress = async (
             // Create default progress if none exists
             progress = await Progress.create({
                 userId: req.user?._id,
-                skillLevel: 75,
-                learningProgress: 68,
-                topicsCompleted: 24,
-                totalTopics: 36,
-                weakAreas: ['Advanced TypeScript', 'System Design', 'Testing'],
+                skillLevel: 0,
+                learningProgress: 0,
+                topicsCompleted: 0,
+                totalTopics: 0,
+                weakAreas: [],
+                strongAreas: [],
+                topicProgress: [],
             });
         }
 
@@ -33,7 +35,34 @@ export const getProgress = async (
                 topicsCompleted: progress.topicsCompleted,
                 totalTopics: progress.totalTopics,
                 weakAreas: progress.weakAreas,
+                strongAreas: progress.strongAreas,
+                topicProgress: progress.topicProgress,
+                quizScores: progress.quizScores,
+                studyTime: progress.studyTime,
+                improvementData: progress.improvementData,
+                streakDays: progress.streakDays,
+                totalStudyHours: progress.totalStudyHours,
             },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get topic progress
+// @route   GET /api/progress/topics
+// @access  Private
+export const getTopicProgress = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const progress = await Progress.findOne({ userId: req.user?._id });
+
+        res.status(200).json({
+            success: true,
+            data: progress?.topicProgress || [],
         });
     } catch (error) {
         next(error);

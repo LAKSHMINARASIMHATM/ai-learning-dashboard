@@ -21,26 +21,38 @@ import {
   Bar,
 } from 'recharts';
 
-const performanceData = [
-  { week: 'W1', score: 65 },
-  { week: 'W2', score: 72 },
-  { week: 'W3', score: 68 },
-  { week: 'W4', score: 85 },
-  { week: 'W5', score: 88 },
-  { week: 'W6', score: 92 },
-];
-
-const skillData = [
-  { topic: 'React', strong: 85 },
-  { topic: 'JavaScript', strong: 72 },
-  { topic: 'TypeScript', strong: 60 },
-  { topic: 'CSS', strong: 78 },
-  { topic: 'APIs', strong: 65 },
-];
-
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<{
+    progress: any;
+    analytics: any;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [progressRes, analyticsRes] = await Promise.all([
+          api.getProgress(),
+          api.getAnalyticsSummary()
+        ]);
+
+        if (progressRes.success && analyticsRes.success) {
+          setDashboardData({
+            progress: progressRes.data,
+            analytics: analyticsRes.data
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleContinueLearning = async () => {
     setLoading(true);
@@ -57,7 +69,7 @@ export default function DashboardPage() {
       // 2. If no path, check for recommended resources
       const resourcesRes = await api.getRecommendedResources();
 
-      if (resourcesRes.success && resourcesRes.data && resourcesRes.data.length > 0) {
+      if (resourcesRes.success && Array.isArray(resourcesRes.data) && resourcesRes.data.length > 0) {
         const firstResource = resourcesRes.data[0];
         // "Start" this resource
         await api.logStudyTime(new Date().toISOString().split('T')[0], 0.1);
@@ -73,6 +85,30 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  const progress = dashboardData?.progress;
+  const analytics = dashboardData?.analytics;
+
+  // Transform data for charts
+  const performanceData = analytics?.quizScores?.map((q: any, i: number) => ({
+    week: q.week || `Quiz ${i + 1}`,
+    score: q.score
+  })) || [];
+
+  const skillData = progress?.topicProgress?.map((t: any) => ({
+    topic: t.topicName,
+    strong: t.masteryLevel
+  })) || [];
+
+  if (isInitialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -96,7 +132,7 @@ export default function DashboardPage() {
               className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xl shadow-emerald-600/30 hover:scale-105 transition-transform"
               onClick={() => router.push('/quiz')}
             >
-              Start Skill Assessment
+              🎯 Start Skill Assessment
             </Button>
             <Button
               variant="outline"
@@ -114,23 +150,23 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <AIInsightCard
           title="Current Skill Level"
-          value="75%"
-          insight="You're in the top 30% of learners. Focus on weak areas to accelerate growth."
+          value={`${progress?.skillLevel || 0}%`}
+          insight="Based on your recent quiz performance and topic mastery."
         />
         <AIInsightCard
           title="Learning Progress"
-          value="68%"
-          insight="You're on pace to complete the course 1 week ahead of schedule."
+          value={`${progress?.learningProgress || 0}%`}
+          insight="Overall completion of your personalized learning path."
         />
         <AIInsightCard
           title="Topics Completed"
-          value="24/36"
-          insight="Just 2 more topics to reach your weekly goal. Keep up the momentum!"
+          value={`${progress?.topicsCompleted || 0}/${progress?.totalTopics || 0}`}
+          insight="Keep going! You're making steady progress through the curriculum."
         />
         <AIInsightCard
           title="Weak Areas"
-          value="3"
-          insight="Advanced TypeScript concepts need attention. We've prepared a custom study plan."
+          value={`${progress?.weakAreas?.length || 0}`}
+          insight={progress?.weakAreas?.length > 0 ? `Focus on: ${progress.weakAreas.slice(0, 2).join(', ')}` : "Great job! No critical weak areas detected."}
         />
       </div>
 
@@ -154,23 +190,30 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={performanceData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
-                  itemStyle={{ color: 'var(--primary)' }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="var(--primary)"
-                  strokeWidth={3}
-                  dot={{ fill: 'var(--primary)', r: 4, strokeWidth: 2, stroke: 'var(--card)' }}
-                  activeDot={{ r: 6, strokeWidth: 0 }}
-                />
-              </LineChart>
+              {performanceData.length > 0 ? (
+                <LineChart data={performanceData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
+                    itemStyle={{ color: 'var(--primary)' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="var(--primary)"
+                    strokeWidth={3}
+                    dot={{ fill: 'var(--primary)', r: 4, strokeWidth: 2, stroke: 'var(--card)' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                </LineChart>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+                  <span className="material-symbols-outlined text-4xl opacity-20">show_chart</span>
+                  <p>Complete quizzes to track your performance!</p>
+                </div>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -182,15 +225,22 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={skillData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="topic" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
-                />
-                <Bar dataKey="strong" fill="var(--primary)" radius={[6, 6, 0, 0]} opacity={0.8} />
-              </BarChart>
+              {skillData.length > 0 ? (
+                <BarChart data={skillData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="topic" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
+                  />
+                  <Bar dataKey="strong" fill="var(--primary)" radius={[6, 6, 0, 0]} opacity={0.8} />
+                </BarChart>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+                  <span className="material-symbols-outlined text-4xl opacity-20">bar_chart</span>
+                  <p>Start learning topics to see your skills grow!</p>
+                </div>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -203,6 +253,9 @@ export default function DashboardPage() {
           onClick={handleContinueLearning}
         >
           Start Learning
+        </Button>
+        <Button variant="outline" onClick={() => router.push('/quiz')}>
+          📝 Take Assessment
         </Button>
         <Button variant="outline" onClick={() => router.push('/recommendations')}>
           View Recommendations

@@ -1,4 +1,12 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const getApiUrl = () => {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (typeof window !== 'undefined') {
+        return `http://${window.location.hostname}:5000/api`;
+    }
+    return 'http://localhost:5000/api';
+};
+
+const API_URL = getApiUrl();
 
 interface ApiResponse<T> {
     success: boolean;
@@ -12,27 +20,31 @@ class ApiClient {
 
     constructor() {
         if (typeof window !== 'undefined') {
-            this.token = localStorage.getItem('token');
+            this.token = localStorage.getItem('accessToken');
         }
     }
 
-    setToken(token: string) {
-        this.token = token;
+    setToken(accessToken: string, refreshToken?: string) {
+        this.token = accessToken;
         if (typeof window !== 'undefined') {
-            localStorage.setItem('token', token);
+            localStorage.setItem('accessToken', accessToken);
+            if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+            }
         }
     }
 
     clearToken() {
         this.token = null;
         if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
         }
     }
 
     private async request<T>(
         endpoint: string,
-        options: RequestInit = {}
+        options: RequestInit & { _isRetry?: boolean } = {}
     ): Promise<ApiResponse<T>> {
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
@@ -50,6 +62,42 @@ class ApiClient {
             });
 
             const data = await response.json();
+
+            // Handle 401 Unauthorized (Token Expired)
+            if (response.status === 401 && !options._isRetry && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
+                if (typeof window !== 'undefined') {
+                    const refreshToken = localStorage.getItem('refreshToken');
+
+                    if (refreshToken) {
+                        try {
+                            // Try to refresh token
+                            const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ refreshToken }),
+                            });
+
+                            const refreshData = await refreshResponse.json();
+
+                            if (refreshData.success && refreshData.data?.accessToken) {
+                                // Update token
+                                this.setToken(refreshData.data.accessToken);
+
+                                // Retry original request
+                                return this.request<T>(endpoint, { ...options, _isRetry: true });
+                            }
+                        } catch (refreshError) {
+                            console.error('Token refresh failed:', refreshError);
+                        }
+                    }
+
+                    // If refresh failed or no refresh token, logout
+                    this.clearToken();
+                    window.location.href = '/login';
+                    return { success: false, error: 'Session expired. Please login again.' };
+                }
+            }
+
             return data;
         } catch (error) {
             return {
@@ -61,23 +109,23 @@ class ApiClient {
 
     // Auth endpoints
     async register(name: string, email: string, password: string, learningPathId?: string) {
-        const result = await this.request<{ user: unknown; token: string }>('/auth/register', {
+        const result = await this.request<{ user: unknown; accessToken: string; refreshToken: string }>('/auth/register', {
             method: 'POST',
             body: JSON.stringify({ name, email, password, learningPathId }),
         });
-        if (result.success && result.data?.token) {
-            this.setToken(result.data.token);
+        if (result.success && result.data?.accessToken) {
+            this.setToken(result.data.accessToken, result.data.refreshToken);
         }
         return result;
     }
 
     async login(email: string, password: string) {
-        const result = await this.request<{ user: unknown; token: string }>('/auth/login', {
+        const result = await this.request<{ user: unknown; accessToken: string; refreshToken: string }>('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
-        if (result.success && result.data?.token) {
-            this.setToken(result.data.token);
+        if (result.success && result.data?.accessToken) {
+            this.setToken(result.data.accessToken, result.data.refreshToken);
         }
         return result;
     }
@@ -219,10 +267,18 @@ class ApiClient {
         notifications?: boolean;
         emailUpdates?: boolean;
         language?: string;
+        twoFactorEnabled?: boolean;
     }) {
         return this.request('/user/settings', {
             method: 'PUT',
             body: JSON.stringify(settings),
+        });
+    }
+
+    async updatePassword(currentPassword: string, newPassword: string) {
+        return this.request('/auth/password', {
+            method: 'PUT',
+            body: JSON.stringify({ currentPassword, newPassword }),
         });
     }
 

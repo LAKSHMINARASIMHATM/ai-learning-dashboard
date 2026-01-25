@@ -2,6 +2,21 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+
+// Load environment variables first
+dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = ['JWT_SECRET', 'MONGODB_URI'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+    console.error('❌ FATAL ERROR: Missing required environment variables:');
+    missingEnvVars.forEach(varName => console.error(`   - ${varName}`));
+    console.error('\n📝 Please check server/ENV_SETUP.md for configuration instructions\n');
+    process.exit(1);
+}
 
 import connectDB from './config/database';
 import { errorHandler, notFound } from './middleware/error.middleware';
@@ -27,8 +42,9 @@ const app: Application = express();
 connectDB();
 
 // Middleware
+app.use(helmet()); // Security headers
 app.use(cors({
-    origin: [process.env.CORS_ORIGIN || 'http://localhost:3000', 'http://localhost:3001'],
+    origin: '*',
     credentials: true
 }));
 app.use(morgan('dev'));

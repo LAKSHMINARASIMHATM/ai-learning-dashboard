@@ -59,12 +59,7 @@ interface QuizAnalytics {
 }
 
 // Topic mastery heatmap data
-const topicCategories = [
-  { name: 'JavaScript', topics: ['Variables', 'Functions', 'Arrays', 'Objects', 'Async/Await'] },
-  { name: 'React', topics: ['Components', 'Hooks', 'State', 'Props', 'Context'] },
-  { name: 'TypeScript', topics: ['Types', 'Interfaces', 'Generics', 'Enums', 'Decorators'] },
-  { name: 'CSS', topics: ['Flexbox', 'Grid', 'Animations', 'Variables', 'Responsive'] },
-];
+
 
 const getMasteryColor = (level: number) => {
   if (level >= 90) return 'bg-emerald-500';
@@ -114,29 +109,14 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Sample data for visualization (will be replaced by real data)
+  // Transform data for visualization
   const quizScoresData = progress?.quizScores?.length
     ? progress.quizScores.slice(-8).map((q, i) => ({ week: `Week ${i + 1}`, score: q.score }))
-    : [
-      { week: 'Week 1', score: 65 },
-      { week: 'Week 2', score: 68 },
-      { week: 'Week 3', score: 72 },
-      { week: 'Week 4', score: 80 },
-      { week: 'Week 5', score: 85 },
-      { week: 'Week 6', score: 88 },
-    ];
+    : [];
 
   const studyTimeData = progress?.studyTime?.length
     ? progress.studyTime.slice(-7).map(s => ({ day: s.day, hours: s.hours }))
-    : [
-      { day: 'Mon', hours: 2.5 },
-      { day: 'Tue', hours: 3.0 },
-      { day: 'Wed', hours: 1.5 },
-      { day: 'Thu', hours: 4.0 },
-      { day: 'Fri', hours: 3.5 },
-      { day: 'Sat', hours: 5.0 },
-      { day: 'Sun', hours: 2.0 },
-    ];
+    : [];
 
   const radarData = quizAnalytics?.topicPerformance
     ? Object.entries(quizAnalytics.topicPerformance).map(([topic, score]) => ({
@@ -144,17 +124,11 @@ export default function AnalyticsPage() {
       score,
       fullMark: 100,
     }))
-    : [
-      { topic: 'JavaScript', score: 85, fullMark: 100 },
-      { topic: 'React', score: 75, fullMark: 100 },
-      { topic: 'TypeScript', score: 60, fullMark: 100 },
-      { topic: 'CSS', score: 80, fullMark: 100 },
-      { topic: 'APIs', score: 70, fullMark: 100 },
-    ];
+    : [];
 
   const totalHours = progress?.totalStudyHours || studyTimeData.reduce((sum, day) => sum + day.hours, 0);
-  const averageQuizScore = quizAnalytics?.averageScore || Math.round(quizScoresData.reduce((sum, w) => sum + w.score, 0) / quizScoresData.length);
-  const streakDays = progress?.streakDays || 7;
+  const averageQuizScore = quizAnalytics?.averageScore || (quizScoresData.length > 0 ? Math.round(quizScoresData.reduce((sum, w) => sum + w.score, 0) / quizScoresData.length) : 0);
+  const streakDays = progress?.streakDays || 0;
 
   if (loading) {
     return (
@@ -246,7 +220,7 @@ export default function AnalyticsPage() {
                 <BookOpen className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
-                <p className="text-3xl font-bold">{progress?.topicsCompleted || 12}/{progress?.totalTopics || 36}</p>
+                <p className="text-3xl font-bold">{progress?.topicsCompleted || 0}/{progress?.totalTopics || 0}</p>
                 <p className="text-xs text-muted-foreground">Topics Completed</p>
               </div>
             </div>
@@ -265,13 +239,19 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={quizScoresData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="week" tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                    <YAxis domain={[0, 100]} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }} />
-                    <Line type="monotone" dataKey="score" stroke="var(--primary)" strokeWidth={3} dot={{ fill: 'var(--primary)', r: 4 }} />
-                  </LineChart>
+                  {quizScoresData.length > 0 ? (
+                    <LineChart data={quizScoresData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="week" tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }} />
+                      <Line type="monotone" dataKey="score" stroke="var(--primary)" strokeWidth={3} dot={{ fill: 'var(--primary)', r: 4 }} />
+                    </LineChart>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      No quiz data available yet.
+                    </div>
+                  )}
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -283,13 +263,19 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={studyTimeData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="day" tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                    <YAxis tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                    <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }} />
-                    <Bar dataKey="hours" fill="var(--primary)" radius={[6, 6, 0, 0]} />
-                  </BarChart>
+                  {studyTimeData.length > 0 ? (
+                    <BarChart data={studyTimeData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="day" tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                      <YAxis tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }} />
+                      <Bar dataKey="hours" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      No study time logged yet.
+                    </div>
+                  )}
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -302,12 +288,18 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                  <PolarAngleAxis dataKey="topic" tick={{ fill: 'currentColor', opacity: 0.7 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', opacity: 0.5 }} />
-                  <Radar name="Score" dataKey="score" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.3} strokeWidth={2} />
-                </RadarChart>
+                {radarData.length > 0 ? (
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="topic" tick={{ fill: 'currentColor', opacity: 0.7 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', opacity: 0.5 }} />
+                    <Radar name="Score" dataKey="score" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.3} strokeWidth={2} />
+                  </RadarChart>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No skill data available yet.
+                  </div>
+                )}
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -326,32 +318,32 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {topicCategories.map((category) => (
-                  <div key={category.name}>
-                    <h4 className="font-medium mb-3">{category.name}</h4>
-                    <div className="grid grid-cols-5 gap-2">
-                      {category.topics.map((topic) => {
-                        // Generate random mastery for demo (will use real data)
-                        const mastery = Math.floor(Math.random() * 100);
-                        return (
-                          <div key={topic} className="group relative">
-                            <div
-                              className={`h-16 rounded-lg ${getMasteryColor(mastery)} flex items-center justify-center transition-all hover:scale-105 cursor-pointer`}
-                            >
-                              <span className="text-white text-xs font-bold">{mastery}%</span>
-                            </div>
-                            <p className="text-xs text-center mt-1 text-muted-foreground truncate">{topic}</p>
-                            {/* Tooltip */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
-                              <p className="font-medium">{topic}</p>
-                              <p className="text-xs text-muted-foreground">{getMasteryLabel(mastery)}</p>
-                            </div>
+                <div className="space-y-6">
+                  {progress?.topicProgress && progress.topicProgress.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {progress.topicProgress.map((topic) => (
+                        <div key={topic.topicId} className="group relative">
+                          <div
+                            className={`h-16 rounded-lg ${getMasteryColor(topic.masteryLevel)} flex items-center justify-center transition-all hover:scale-105 cursor-pointer`}
+                          >
+                            <span className="text-white text-xs font-bold">{topic.masteryLevel}%</span>
                           </div>
-                        );
-                      })}
+                          <p className="text-xs text-center mt-1 text-muted-foreground truncate">{topic.topicName}</p>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                            <p className="font-medium">{topic.topicName}</p>
+                            <p className="text-xs text-muted-foreground">{getMasteryLabel(topic.masteryLevel)}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>No topic progress data available yet.</p>
+                      <p className="text-sm">Start learning to see your mastery heatmap!</p>
+                    </div>
+                  )}
+                </div>
               </div>
               {/* Legend */}
               <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t">
@@ -394,12 +386,16 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(progress?.strongAreas || ['React Components', 'JavaScript ES6', 'CSS Flexbox']).map((area, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10">
-                      <span className="font-medium">{area}</span>
-                      <span className="text-emerald-500 font-bold">90%+</span>
-                    </div>
-                  ))}
+                  {(progress?.strongAreas || []).length > 0 ? (
+                    progress?.strongAreas.map((area, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10">
+                        <span className="font-medium">{area}</span>
+                        <span className="text-emerald-500 font-bold">90%+</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No strong areas identified yet.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -412,12 +408,38 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {(progress?.weakAreas || ['TypeScript Generics', 'Testing', 'System Design']).map((area, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-rose-500/10">
-                      <span className="font-medium">{area}</span>
-                      <span className="text-rose-500 font-bold">&lt;50%</span>
-                    </div>
-                  ))}
+                  {(progress?.strongAreas || []).length > 0 ? (
+                    progress?.strongAreas.map((area, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10">
+                        <span className="font-medium">{area}</span>
+                        <span className="text-emerald-500 font-bold">90%+</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No strong areas identified yet.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg text-rose-500 flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Areas to Improve
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(progress?.weakAreas || []).length > 0 ? (
+                    progress?.weakAreas.map((area, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-rose-500/10">
+                        <span className="font-medium">{area}</span>
+                        <span className="text-rose-500 font-bold">&lt;50%</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No weak areas identified yet.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -456,22 +478,26 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Object.entries(quizAnalytics?.topicPerformance || { JavaScript: 85, React: 75, TypeScript: 60 }).map(([topic, score]) => (
-                  <div key={topic}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium">{topic}</span>
-                      <span className={`font-bold ${score >= 70 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
-                        {score}%
-                      </span>
+                {Object.keys(quizAnalytics?.topicPerformance || {}).length > 0 ? (
+                  Object.entries(quizAnalytics!.topicPerformance).map(([topic, score]) => (
+                    <div key={topic}>
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium">{topic}</span>
+                        <span className={`font-bold ${score >= 70 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                          {score}%
+                        </span>
+                      </div>
+                      <div className="h-3 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${score >= 70 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                          style={{ width: `${score}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${score >= 70 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                        style={{ width: `${score}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No topic performance data available.</p>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import Progress from '../models/Progress';
 import SkillGap from '../models/SkillGap';
 import LearningPath from '../models/LearningPath';
-import { generateToken } from '../middleware/auth.middleware';
+import RefreshToken from '../models/RefreshToken';
+import TokenBlacklist from '../models/TokenBlacklist';
+import { generateTokens, verifyRefreshToken, generateAccessToken } from '../middleware/auth.middleware';
 import { AuthRequest } from '../types';
 import { getPathById, allLearningPaths } from '../data/learningPathTemplates';
 
@@ -113,8 +116,11 @@ export const register = async (
         user.currentLearningPathId = learningPath._id;
         await user.save();
 
-        // Generate token
-        const token = generateToken(user._id.toString());
+        // Generate tokens
+        const { accessToken, refreshToken } = await generateTokens(user._id.toString(), {
+            userAgent: req.headers['user-agent'],
+            ip: req.ip,
+        });
 
         res.status(201).json({
             success: true,
@@ -126,7 +132,8 @@ export const register = async (
                     preferences: user.preferences,
                     currentLearningPathId: user.currentLearningPathId,
                 },
-                token,
+                accessToken,
+                refreshToken,
             },
         });
     } catch (error) {
@@ -176,7 +183,10 @@ export const login = async (
             return;
         }
 
-        const token = generateToken(user._id.toString());
+        const { accessToken, refreshToken } = await generateTokens(user._id.toString(), {
+            userAgent: req.headers['user-agent'],
+            ip: req.ip,
+        });
 
         res.status(200).json({
             success: true,
@@ -187,7 +197,8 @@ export const login = async (
                     email: user.email,
                     preferences: user.preferences,
                 },
-                token,
+                accessToken,
+                refreshToken,
             },
         });
     } catch (error) {
@@ -215,6 +226,128 @@ export const getMe = async (
                 avatar: user?.avatar,
                 preferences: user?.preferences,
             },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public
+export const refreshToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const { refreshToken: token } = req.body;
+
+        if (!token) {
+            res.status(400).json({
+                success: false,
+                error: 'Please provide a refresh token',
+            });
+            return;
+        }
+
+        const decoded = await verifyRefreshToken(token);
+        const accessToken = generateAccessToken(decoded.id);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                accessToken,
+            },
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid refresh token';
+        res.status(401).json({
+            success: false,
+            error: message,
+        });
+    }
+};
+
+// @desc    Logout user / Invalidate tokens
+// @route   POST /api/auth/logout
+// @access  Private
+export const logout = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const authHeader = req.headers.authorization;
+        const accessToken = authHeader?.split(' ')[1];
+        const { refreshToken: token } = req.body;
+
+        // Blacklist access token if provided
+        if (accessToken) {
+            const decoded = jwt.decode(accessToken) as any;
+            const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 15 * 60 * 1000);
+
+            await TokenBlacklist.create({
+                token: accessToken,
+                expiresAt,
+                reason: 'logout',
+            });
+        }
+
+        // Revoke refresh token if provided
+        if (token) {
+            await RefreshToken.updateOne(
+                { token },
+                { isRevoked: true }
+            );
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Logged out successfully',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update password
+// @route   PUT /api/auth/password
+// @access  Private
+export const updatePassword = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await User.findById(req.user?._id).select('+password');
+
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                error: 'User not found',
+            });
+            return;
+        }
+
+        // Check current password
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+            res.status(401).json({
+                success: false,
+                error: 'Invalid current password',
+            });
+            return;
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password updated successfully',
         });
     } catch (error) {
         next(error);
