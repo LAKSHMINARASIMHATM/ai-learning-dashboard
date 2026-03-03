@@ -193,7 +193,7 @@ const buildQuizzesFromBank = () => {
 // Generate personalized recommendations based on quiz performance
 const generateRecommendations = (
     topicPerformance: Record<string, number>,
-    errorPatterns: { questionId: string; subtopic?: string }[]
+    _errorPatterns: { questionId: string; subtopic?: string }[]
 ) => {
     const recommendations: {
         topic: string;
@@ -248,7 +248,7 @@ const generateRecommendations = (
 // @route   POST /api/quiz/reseed
 // @access  Private
 export const reseedQuizzes = async (
-    req: AuthRequest,
+    _req: AuthRequest,
     res: Response,
     next: NextFunction
 ): Promise<void> => {

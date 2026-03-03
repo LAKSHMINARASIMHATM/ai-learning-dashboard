@@ -23,8 +23,14 @@ Priority Order:
 import sys
 import subprocess
 import argparse
+import io
 from pathlib import Path
 from typing import List, Tuple, Optional
+
+# Ensure UTF-8 output on Windows
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # ANSI colors for terminal output
 class Colors:

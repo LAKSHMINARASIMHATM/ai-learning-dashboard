@@ -1,12 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid'; // I'll use crypto if uuid isn't there
 import crypto from 'crypto';
 import User from '../models/User';
 import TokenBlacklist from '../models/TokenBlacklist';
 import RefreshToken from '../models/RefreshToken';
 import { AuthRequest, TokenPayload, AuthTokens } from '../types';
-
 // Helper for unique ID generation
 const generateJti = () => crypto.randomUUID();
 
@@ -34,7 +32,7 @@ export const generateAccessToken = (userId: string): string => {
     };
 
     return jwt.sign(payload, getJwtSecret(), {
-        expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m',
+        expiresIn: (process.env.JWT_ACCESS_EXPIRE || '15m') as any,
     });
 };
 
@@ -47,7 +45,7 @@ export const generateRefreshToken = (userId: string): string => {
     };
 
     return jwt.sign(payload, getJwtSecret(), {
-        expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d',
+        expiresIn: (process.env.JWT_REFRESH_EXPIRE || '7d') as any,
     });
 };
 
@@ -144,7 +142,7 @@ export const protect = async (
         } else if (req.headers.cookie) {
             // Manual parsing in case cookie-parser isn't installed
             const cookies = Object.fromEntries(
-                req.headers.cookie.split(';').map(c => c.trim().split('='))
+                req.headers.cookie.split(';').map((c: string) => c.trim().split('='))
             );
             token = cookies['accessToken'];
         }

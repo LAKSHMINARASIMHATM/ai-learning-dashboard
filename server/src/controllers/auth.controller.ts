@@ -8,7 +8,7 @@ import SkillGap from '../models/SkillGap';
 import LearningPath from '../models/LearningPath';
 import RefreshToken from '../models/RefreshToken';
 import TokenBlacklist from '../models/TokenBlacklist';
-import { generateTokens, verifyRefreshToken, generateAccessToken } from '../middleware/auth.middleware';
+import { generateTokens, verifyRefreshToken } from '../middleware/auth.middleware';
 import { AuthRequest } from '../types';
 import { getPathById, allLearningPaths } from '../data/learningPathTemplates';
 
@@ -406,7 +406,7 @@ export const getMe = async (
 export const refreshToken = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ): Promise<void> => {
     try {
         // MED-07: Extract token from body or cookies

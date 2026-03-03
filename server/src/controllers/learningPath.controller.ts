@@ -17,7 +17,7 @@ const parseStepIndex = (stepIndex: string, stepsLength: number): number | null =
 // @route   GET /api/learning-path/templates
 // @access  Private
 export const getPathTemplates = async (
-    req: AuthRequest,
+    _req: AuthRequest,
     res: Response,
     next: NextFunction
 ): Promise<void> => {

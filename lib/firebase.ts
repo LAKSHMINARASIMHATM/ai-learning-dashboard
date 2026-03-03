@@ -10,9 +10,18 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Initialize Firebase – Build-safe check
+let app;
+let auth: any;
+
+if (firebaseConfig.apiKey) {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    auth = getAuth(app);
+} else {
+    // Fallback for build time or missing config
+    app = null;
+    auth = null;
+}
 
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();

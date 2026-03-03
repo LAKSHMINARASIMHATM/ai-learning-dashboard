@@ -36,6 +36,9 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "server",
+    "ai-learning-dashboard-api",
+    "stitch_ai_learning_landing_page"
   ]
 }
