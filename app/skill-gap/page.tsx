@@ -11,13 +11,22 @@ interface SkillGap {
   topic: string;
   currentLevel: number;
   targetLevel: number;
+  gap?: number;
   priority: 'high' | 'medium' | 'low';
+}
+
+interface SkillGapData {
+  skills: SkillGap[];
+  hasRealData: boolean;
+  message?: string;
+  lastAssessmentDate?: string;
 }
 
 export default function SkillGapAnalysisPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [skills, setSkills] = useState<SkillGap[]>([]);
+  const [hasRealData, setHasRealData] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -28,6 +37,7 @@ export default function SkillGapAnalysisPage() {
       const response = await api.getSkillGaps();
       if (response.success && response.data) {
         setSkills(response.data.skills || []);
+        setHasRealData(response.data.hasRealData ?? false);
       }
     } catch (error) {
       console.error('Failed to fetch skill gaps:', error);
@@ -47,12 +57,15 @@ export default function SkillGapAnalysisPage() {
   }
 
   const criticalGapsCount = skills.filter(s => s.priority === 'high').length;
-  // Calculate average gap
   const totalGap = skills.reduce((sum, s) => sum + (s.targetLevel - s.currentLevel), 0);
   const avgGap = skills.length > 0 ? Math.round(totalGap / skills.length) : 0;
   const roleReadiness = skills.length > 0
     ? Math.round(skills.reduce((sum, s) => sum + s.currentLevel, 0) / (skills.length * 100) * 100)
     : 0;
+
+  // Skills with data vs no data
+  const activeSkills = skills.filter(s => s.currentLevel > 0);
+  const noDataSkills = skills.filter(s => s.currentLevel === 0);
 
   return (
     <DashboardLayout>
@@ -60,7 +73,11 @@ export default function SkillGapAnalysisPage() {
       <div className="mb-8 flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold tracking-tight mb-2">Skill Gap Analysis</h2>
-          <p className="text-foreground/60 font-medium">Identify your strengths and areas for improvement</p>
+          <p className="text-foreground/60 font-medium">
+            {hasRealData
+              ? 'Computed from your quiz scores and learning path progress'
+              : 'Complete quizzes to generate your personalized skill map'}
+          </p>
         </div>
         <div className="flex gap-4 text-xs font-bold uppercase tracking-wider">
           <div className="flex items-center gap-2">
@@ -73,6 +90,27 @@ export default function SkillGapAnalysisPage() {
           </div>
         </div>
       </div>
+
+      {/* No data banner */}
+      {!hasRealData && (
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-primary/10 to-cyan-500/10 border border-primary/20 p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+              <span className="material-symbols-outlined text-2xl">quiz</span>
+            </span>
+            <div>
+              <p className="font-bold text-lg">No assessment data yet</p>
+              <p className="text-foreground/60 text-sm">Take quizzes in your learning path to see real skill levels here.</p>
+            </div>
+          </div>
+          <button
+            className="px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
+            onClick={() => router.push('/quiz')}
+          >
+            Start a Quiz
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Radar Chart Section */}
@@ -88,6 +126,11 @@ export default function SkillGapAnalysisPage() {
                 <circle cx="150" cy="150" r="60"></circle>
                 <circle cx="150" cy="150" r="90"></circle>
                 <circle cx="150" cy="150" r="120"></circle>
+                {/* Percentage labels */}
+                <text x="154" y="148" className="fill-foreground/20 text-[8px]" textAnchor="start">25%</text>
+                <text x="154" y="118" className="fill-foreground/20 text-[8px]" textAnchor="start">50%</text>
+                <text x="154" y="88" className="fill-foreground/20 text-[8px]" textAnchor="start">75%</text>
+                <text x="154" y="58" className="fill-foreground/20 text-[8px]" textAnchor="start">100%</text>
                 {/* Spokes */}
                 {skills.map((_, i) => {
                   const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
@@ -97,31 +140,37 @@ export default function SkillGapAnalysisPage() {
                 })}
               </g>
 
-              {/* Labels */}
-              <g className="text-[11px] fill-foreground/50 font-bold tracking-wide" textAnchor="middle">
+              {/* Labels with score */}
+              <g className="text-[10px] fill-foreground/60 font-bold tracking-wide" textAnchor="middle">
                 {skills.map((skill, i) => {
                   const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
-                  const x = 150 + 140 * Math.cos(angle);
-                  const y = 150 + 140 * Math.sin(angle);
-                  return <text key={i} x={x} y={y}>{skill.topic}</text>;
+                  const x = 150 + 142 * Math.cos(angle);
+                  const y = 150 + 142 * Math.sin(angle);
+                  return (
+                    <text key={i} x={x} y={y}>
+                      {skill.topic} {hasRealData ? `(${skill.currentLevel}%)` : ''}
+                    </text>
+                  );
                 })}
               </g>
 
-              {/* Current Path */}
-              <path
-                className="drop-shadow-lg"
-                d={`M ${skills.map((s, i) => {
-                  const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
-                  const r = (s.currentLevel / 100) * 120;
-                  return `${150 + r * Math.cos(angle)} ${150 + r * Math.sin(angle)}`;
-                }).join(' L ')} Z`}
-                fill="url(#gradientPrimary)"
-                stroke="var(--primary)"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-              ></path>
+              {/* Current level (filled area) */}
+              {hasRealData && activeSkills.length >= 3 && (
+                <path
+                  className="drop-shadow-lg"
+                  d={`M ${skills.map((s, i) => {
+                    const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
+                    const r = (s.currentLevel / 100) * 120;
+                    return `${150 + r * Math.cos(angle)} ${150 + r * Math.sin(angle)}`;
+                  }).join(' L ')} Z`}
+                  fill="url(#gradientPrimary)"
+                  stroke="var(--primary)"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                ></path>
+              )}
 
-              {/* Target Path */}
+              {/* Target Path (dashed outline) */}
               <path
                 d={`M ${skills.map((s, i) => {
                   const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
@@ -135,6 +184,26 @@ export default function SkillGapAnalysisPage() {
                 strokeLinejoin="round"
                 strokeWidth="2"
               ></path>
+
+              {/* Current level dots */}
+              {hasRealData && skills.map((s, i) => {
+                const angle = (Math.PI * 2 * i) / skills.length - Math.PI / 2;
+                const r = (s.currentLevel / 100) * 120;
+                const cx = 150 + r * Math.cos(angle);
+                const cy = 150 + r * Math.sin(angle);
+                return (
+                  <circle
+                    key={`dot-${i}`}
+                    cx={cx}
+                    cy={cy}
+                    r="4"
+                    fill="var(--primary)"
+                    stroke="white"
+                    strokeWidth="2"
+                    className="drop-shadow-md"
+                  />
+                );
+              })}
 
               <defs>
                 <radialGradient cx="150" cy="150" gradientUnits="userSpaceOnUse" id="gradientPrimary" r="120">
@@ -161,6 +230,7 @@ export default function SkillGapAnalysisPage() {
               <p className="text-xs font-bold text-foreground/50 uppercase tracking-widest">Critical Gaps</p>
             </div>
             <p className="text-4xl font-black tracking-tight">{criticalGapsCount}</p>
+            {!hasRealData && <p className="text-xs text-foreground/40">Take quizzes to measure</p>}
           </div>
 
           <div className="flex flex-col gap-2 rounded-3xl bg-card p-6 shadow-sm border border-border">
@@ -181,6 +251,9 @@ export default function SkillGapAnalysisPage() {
               <p className="text-xs font-bold text-white/70 uppercase tracking-widest">Role Readiness</p>
             </div>
             <p className="text-4xl font-black tracking-tight">{roleReadiness}%</p>
+            {hasRealData && (
+              <p className="text-xs text-white/60 mt-1">Based on quiz scores & learning progress</p>
+            )}
           </div>
         </div>
       </div>
@@ -189,12 +262,14 @@ export default function SkillGapAnalysisPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold tracking-tight">Priority Gaps</h3>
-          <button
-            className="text-sm font-bold text-primary hover:underline"
-            onClick={() => router.push('/recommendations')}
-          >
-            View All
-          </button>
+          {hasRealData && (
+            <button
+              className="text-sm font-bold text-primary hover:underline"
+              onClick={() => router.push('/quiz')}
+            >
+              Retake Quizzes
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {skills.filter(s => s.priority !== 'low').map((skill) => (
@@ -207,7 +282,11 @@ export default function SkillGapAnalysisPage() {
                   <div>
                     <p className="text-xl font-bold leading-tight">{skill.topic}</p>
                     <p className="text-xs text-foreground/50 mt-1 font-bold uppercase tracking-wide">
-                      {skill.targetLevel - skill.currentLevel > 20 ? 'Critical' : 'Growth'}
+                      {skill.currentLevel === 0
+                        ? 'Not assessed'
+                        : skill.targetLevel - skill.currentLevel > 50
+                          ? 'Critical'
+                          : 'Growth'}
                     </p>
                   </div>
                   <span className={`inline-flex items-center rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wider border ${skill.priority === 'high'
@@ -220,7 +299,7 @@ export default function SkillGapAnalysisPage() {
                 <div className="flex items-center gap-4">
                   <div className="relative h-3 flex-1 rounded-full bg-foreground/5 overflow-hidden">
                     <div
-                      className={`absolute left-0 top-0 h-full bg-gradient-to-r rounded-full shadow-lg ${skill.priority === 'high' ? 'from-rose-500 to-orange-400' : 'from-amber-400 to-yellow-300'
+                      className={`absolute left-0 top-0 h-full bg-gradient-to-r rounded-full shadow-lg transition-all duration-1000 ${skill.priority === 'high' ? 'from-rose-500 to-orange-400' : 'from-amber-400 to-yellow-300'
                         }`}
                       style={{ width: `${skill.currentLevel}%` }}
                     ></div>
@@ -245,6 +324,42 @@ export default function SkillGapAnalysisPage() {
           )}
         </div>
       </div>
+
+      {/* Data sources info (only with real data) */}
+      {hasRealData && (
+        <div className="rounded-3xl bg-card/50 border border-border p-6 mb-8">
+          <h3 className="text-lg font-bold mb-4">How your scores are calculated</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                <span className="material-symbols-outlined text-lg">quiz</span>
+              </span>
+              <div>
+                <p className="font-bold text-sm">Quiz Scores</p>
+                <p className="text-xs text-foreground/50">50% weight — based on your quiz answer accuracy</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
+                <span className="material-symbols-outlined text-lg">route</span>
+              </span>
+              <div>
+                <p className="font-bold text-sm">Learning Path Progress</p>
+                <p className="text-xs text-foreground/50">30% weight — checklist items you&apos;ve completed</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 shrink-0">
+                <span className="material-symbols-outlined text-lg">insights</span>
+              </span>
+              <div>
+                <p className="font-bold text-sm">Mastery Level</p>
+                <p className="text-xs text-foreground/50">20% weight — from your overall topic progress</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

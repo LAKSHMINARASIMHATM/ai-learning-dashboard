@@ -15,6 +15,7 @@ const checklistItemSchema = new Schema({
         default: 'article',
     },
     isRequired: { type: Boolean, default: true },
+    url: { type: String },
 });
 
 // Learning step schema with milestone support
@@ -102,6 +103,7 @@ const learningPathSchema = new Schema<ILearningPath>(
             type: Boolean,
             default: true,
         },
+        tags: [String],
     },
     {
         timestamps: true,
@@ -113,14 +115,14 @@ learningPathSchema.index({ userId: 1, isActive: 1 });
 learningPathSchema.index({ userId: 1, createdAt: -1 });
 
 // Virtual for completion percentage
-learningPathSchema.virtual('completionPercentage').get(function () {
+learningPathSchema.virtual('completionPercentage').get(function (this: ILearningPath) {
     if (!this.steps || this.steps.length === 0) return 0;
     const completed = this.steps.filter(s => s.completed).length;
     return Math.round((completed / this.steps.length) * 100);
 });
 
 // Pre-save hook to update progress
-learningPathSchema.pre('save', function (next) {
+learningPathSchema.pre('save', function (this: ILearningPath, next) {
     if (this.steps && this.steps.length > 0) {
         const completed = this.steps.filter(s => s.completed).length;
         this.progress = Math.round((completed / this.steps.length) * 100);

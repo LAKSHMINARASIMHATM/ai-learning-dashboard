@@ -1,0 +1,1322 @@
+# 🛡️ AI Learning Dashboard — Comprehensive Codebase Audit
+
+> **Audit Date:** March 3, 2026  
+> **Codebase:** `ai-learning-dashboard` (Next.js + Express + MongoDB)  
+> **Scope:** Security · Performance · Reliability · Scalability  
+> **Auditor:** Antigravity Agent (Security Auditor + Backend Specialist)
+
+---
+
+## Executive Summary
+
+This audit identified **38 distinct issues** across the codebase spanning security vulnerabilities, performance bottlenecks, reliability gaps, and scalability concerns. The most critical findings involve **CORS misconfiguration allowing any origin**, a **non-atomic registration flow with 4+ sequential write operations**, and a **frontend assistant page that ignores the backend API entirely**. The token management architecture is generally sound (proper blacklisting, refresh rotation) but has edge-case vulnerabilities in the logout flow.
+
+### Risk Distribution
+
+| Severity | Count | % of Total |
+|----------|-------|------------|
+| 🔴 **Critical** | 5 | 13% |
+| 🟠 **High** | 10 | 26% |
+| 🟡 **Medium** | 13 | 34% |
+| 🔵 **Low** | 10 | 26% |
+
+---
+
+## Table of Contents
+
+1. [Critical Findings](#-critical-findings)
+2. [High Severity Findings](#-high-severity-findings)
+3. [Medium Severity Findings](#-medium-severity-findings)
+4. [Low Severity Findings](#-low-severity-findings)
+5. [Component Impact Matrix](#component-impact-matrix)
+6. [Remediation Priority Roadmap](#remediation-priority-roadmap)
+
+---
+
+## 🔴 Critical Findings
+
+### CRIT-01: Wildcard CORS Origin — Full API Exposure
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔴 Critical |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L46-L49) |
+| **OWASP** | A01:2021 — Broken Access Control |
+| **Impact** | Any website on the internet can make authenticated cross-origin requests to this API with `credentials: true` |
+
+**Affected Code:**
+
+```typescript
+// server/src/server.ts:46-49
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
+```
+
+**The Problem:** Setting `origin: '*'` while also enabling `credentials: true` is a direct contradiction of browser CORS policy. Modern browsers will actually **reject** this configuration for credentialed requests, meaning that Cookie/Authorization-based cross-origin requests will silently fail. However, if the browser vendor relaxes this (or `credentials: false` is used in practice), **any website can call your API endpoints**, enabling CSRF-like attacks.
+
+Furthermore, the `CORS_ORIGIN` env var (`http://localhost:3000`) is defined in the `.env` file but **never used** in the code.
+
+**Remediation:**
+
+```typescript
+app.use(cors({
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+```
+
+---
+
+### CRIT-02: Non-Atomic Registration — Data Consistency Risk
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔴 Critical |
+| **Component** | [auth.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/auth.controller.ts#L16-L141) |
+| **Impact** | Partial user creation leaves orphaned records on failure; potential data corruption |
+
+**The Problem:** The `register` function performs **5 sequential database operations** without a MongoDB transaction:
+
+1. `User.create()` (line 35)
+2. `Progress.create()` (line 45)
+3. `SkillGap.create()` (line 68)
+4. `LearningPath.create()` (line 102)
+5. `user.save()` (line 117)
+
+If any operation after step 1 fails (e.g., `LearningPath.create()` throws a validation error), the user document exists **without** associated progress/skillGap/learningPath records. Subsequent login will succeed, but accessing dashboard features will produce inconsistent/undefined behavior.
+
+**Impact Scenarios:**
+- MongoDB connection hiccup after User creation → user exists but can never use the platform properly
+- Template data error → orphan user + progress, missing learning path
+- No rollback mechanism exists
+
+**Remediation:**
+
+```typescript
+import mongoose from 'mongoose';
+
+export const register = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const user = await User.create([{ name, email, password }], { session });
+        await Progress.create([{ userId: user[0]._id, ... }], { session });
+        await SkillGap.create([{ userId: user[0]._id, ... }], { session });
+        const learningPath = await LearningPath.create([...], { session });
+        user[0].currentLearningPathId = learningPath[0]._id;
+        await user[0].save({ session });
+        
+        await session.commitTransaction();
+        // ... respond
+    } catch (error) {
+        await session.abortTransaction();
+        next(error);
+    } finally {
+        session.endSession();
+    }
+};
+```
+
+---
+
+### CRIT-03: Frontend Assistant Page Ignores Backend API
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔴 Critical |
+| **Component** | [assistant/page.tsx](file:///d:/ai-learning-dashboard/app/assistant/page.tsx#L27-L57) |
+| **Impact** | Chat messages are never persisted; no real AI capability; complete feature breakdown |
+
+**The Problem:** The assistant page (`app/assistant/page.tsx`) uses a **local `generateMockAIResponse` function** (line 167) with `setTimeout` (line 48) instead of calling the backend's `/api/assistant/chat` endpoint. The backend has a fully implemented `sendMessage` controller that persists messages to MongoDB and generates responses, but it is never called.
+
+```typescript
+// Frontend (app/assistant/page.tsx:48-56) — MOCK, never calls API
+setTimeout(() => {
+    const aiMessage = {
+        id: messages.length + 2,
+        type: 'ai',
+        content: generateMockAIResponse(input), // Local mock!
+    };
+    setMessages((prev) => [...prev, aiMessage]);
+    setIsLoading(false);
+}, 800);
+```
+
+```typescript
+// Backend (assistant.controller.ts:555-597) — Fully implemented, never called
+export const sendMessage = async (req, res, next) => {
+    const { content } = req.body;
+    const userMessage = await ChatMessage.create({ userId: req.user?._id, type: 'user', content });
+    const aiContent = generateAIResponse(content);
+    const aiMessage = await ChatMessage.create({ userId: req.user?._id, type: 'ai', content: aiContent });
+    // ...
+};
+```
+
+Meanwhile, `lib/api.ts` has the correct `sendMessage`, `getChatHistory`, `clearChatHistory`, and `getSuggestions` methods (lines 222-239) — **they are defined but never imported or called** in the assistant page.
+
+**Impact:** Chat history is lost on page refresh. No user-specific conversation tracking. Backend chat infrastructure is wasted.
+
+**Remediation:** Rewrite the assistant page to use the `api` client:
+
+```typescript
+import { api } from '@/lib/api';
+
+const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    
+    setMessages(prev => [...prev, { type: 'user', content: input }]);
+    setInput('');
+    setIsLoading(true);
+    
+    const result = await api.sendMessage(input);
+    if (result.success && result.data) {
+        setMessages(prev => [...prev, result.data.aiMessage]);
+    }
+    setIsLoading(false);
+};
+
+// On mount: load history
+useEffect(() => {
+    const loadHistory = async () => {
+        const result = await api.getChatHistory();
+        if (result.success && result.data) setMessages(result.data);
+    };
+    loadHistory();
+}, []);
+```
+
+---
+
+### CRIT-04: JWT Secret Weak Default — Trivially Guessable
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔴 Critical |
+| **Component** | [.env](file:///d:/ai-learning-dashboard/server/.env#L2) |
+| **OWASP** | A02:2021 — Cryptographic Failures |
+| **Impact** | Token forgery, account takeover |
+
+**Affected Code:**
+
+```
+JWT_SECRET=development_secret_key_change_in_production_987654321
+```
+
+**The Problem:** The JWT secret is a plaintext, guessable string committed in the `.env` file. While `.env` is in `.gitignore`, this value is used as a **fallback** and the `auth.middleware.ts` only warns (not rejects) if the key is under 32 chars. If this value leaks to production or is reused, any attacker can forge valid JWT tokens.
+
+**Remediation:**
+1. Generate a cryptographically random 64+ character secret
+2. Use production secret management (Vault, AWS SSM, etc.)
+3. **Enforce** minimum key length by throwing (not warning) in production:
+
+```typescript
+const getJwtSecret = (): string => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('FATAL: JWT_SECRET not set');
+    if (process.env.NODE_ENV === 'production' && secret.length < 64) {
+        throw new Error('FATAL: JWT_SECRET must be >= 64 chars in production');
+    }
+    return secret;
+};
+```
+
+---
+
+### CRIT-05: `reseedQuizzes` Endpoint Has No Admin Guard
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔴 Critical |
+| **Component** | [quiz.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/quiz.controller.ts#L250-L271) + [quiz.routes.ts](file:///d:/ai-learning-dashboard/server/src/routes/quiz.routes.ts#L22) |
+| **OWASP** | A01:2021 — Broken Access Control |
+| **Impact** | Any authenticated user can wipe all quizzes from the database |
+
+**Affected Code:**
+
+```typescript
+// quiz.routes.ts:22
+router.post('/reseed', reseedQuizzes);
+
+// quiz.controller.ts:257 — DELETES ALL QUIZZES
+await Quiz.deleteMany({});
+```
+
+**The Problem:** The `POST /api/quiz/reseed` endpoint **only requires `protect` middleware** (basic authentication). Any logged-in student can call this and nuke the entire quiz collection. There is no role-based access control (RBAC) anywhere in the codebase despite the User model having a `role` field (`student`, `teacher`, `admin`).
+
+**Remediation:**
+
+```typescript
+// New middleware: middleware/rbac.middleware.ts
+export const requireRole = (...roles: string[]) => {
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({ success: false, error: 'Insufficient permissions' });
+        }
+        next();
+    };
+};
+
+// quiz.routes.ts
+router.post('/reseed', requireRole('admin'), reseedQuizzes);
+```
+
+---
+
+## 🟠 High Severity Findings
+
+### HIGH-01: Rate Limiter Not Applied to Most API Routes
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L59-L68) + [rateLimiter.middleware.ts](file:///d:/ai-learning-dashboard/server/src/middleware/rateLimiter.middleware.ts) |
+| **Impact** | DoS attack vector; AI assistant endpoint can be spammed infinitely |
+
+**The Problem:** The `apiLimiter` is defined in `rateLimiter.middleware.ts` but **never imported or applied** in `server.ts`. Only auth routes have rate limiting. The highly sensitive endpoints below have zero rate protection:
+
+| Endpoint | Risk |
+|---------|------|
+| `POST /api/assistant/chat` | Unlimited chat messages → database bloat |
+| `POST /api/quiz/:id/submit` | Spam quiz submissions → manipulate scores |
+| `PUT /api/progress` | Unlimited progress manipulation |
+| `DELETE /api/assistant/history` | Repeated bulk deletions |
+
+**Remediation:** Apply global rate limiter in `server.ts`:
+
+```typescript
+import { apiLimiter } from './middleware/rateLimiter.middleware';
+
+// Apply global rate limiter BEFORE routes
+app.use('/api', apiLimiter);
+```
+
+Additionally, create specific rate limiters for heavy endpoints:
+
+```typescript
+export const chatLimiter = rateLimit({
+    windowMs: 60 * 1000,  // 1 minute
+    max: 20,              // 20 messages per minute
+    message: { success: false, error: 'Too many messages. Slow down.' },
+});
+```
+
+---
+
+### HIGH-02: Login Rate Limit Too Permissive — 50 Attempts
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [rateLimiter.middleware.ts](file:///d:/ai-learning-dashboard/server/src/middleware/rateLimiter.middleware.ts#L4-L15) |
+| **Impact** | Brute-force attacks remain viable with 50 failed attempts per 15 minutes |
+
+**Affected Code:**
+
+```typescript
+export const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    skipSuccessfulRequests: true,
+});
+```
+
+**The Problem:** 50 failed login attempts per 15-minute window is too high for brute-force protection. An attacker can try ~200 passwords per hour. The `skipSuccessfulRequests: true` flag is good but doesn't offset the high limit. Registration limiter allows 30 per hour — reasonable, but combined with no email verification this enables mass-account creation.
+
+**Remediation:**
+- Login: `max: 5` per IP per 15 minutes (industry standard)
+- Add progressive backoff (exponential delay after each failure)
+- Implement account lockout after 10 consecutive failures
+
+---
+
+### HIGH-03: Firebase + JWT Dual Auth — Conflicting Identity Systems
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [login/page.tsx](file:///d:/ai-learning-dashboard/app/login/page.tsx#L22-L75) + [firebase.ts](file:///d:/ai-learning-dashboard/lib/firebase.ts) |
+| **Impact** | Firebase social login bypasses JWT system entirely; inconsistent auth state |
+
+**The Problem:** The login page has two authentication paths:
+
+1. **Firebase Social Login** (Google/GitHub/Microsoft) — stores user info in `localStorage` and redirects, but **never creates a JWT session on the backend**. No `api.login()` call occurs. The backend never knows this user exists.
+
+2. **Email/Password Login** — attempts Firebase auth first (silently fails), then falls back to `api.login()` which generates a JWT.
+
+```typescript
+// Firebase social login: NO backend session created
+const handleFirebaseLogin = async (provider) => {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const idToken = await user.getIdToken(); // idToken is NEVER sent to backend!
+    
+    localStorage.setItem('user', JSON.stringify({ ... }));
+    router.push('/'); // Dashboard loads but ALL API calls will fail (no JWT token)
+};
+```
+
+**Impact:** Users who sign in via social login can see the dashboard but **every API call will return 401** because there's no JWT stored. The `api` client reads `localStorage.accessToken` which is never set in the Firebase flow.
+
+**Remediation:** Implement a backend endpoint that verifies Firebase ID tokens and issues JWTs:
+
+```typescript
+// Backend: POST /api/auth/firebase
+export const firebaseLogin = async (req, res) => {
+    const { idToken } = req.body;
+    const firebaseUser = await admin.auth().verifyIdToken(idToken);
+    
+    let user = await User.findOne({ email: firebaseUser.email });
+    if (!user) {
+        user = await User.create({ 
+            name: firebaseUser.name, 
+            email: firebaseUser.email,
+            password: crypto.randomUUID(), // Social users don't need a password
+        });
+    }
+    
+    const { accessToken, refreshToken } = await generateTokens(user._id.toString());
+    res.json({ success: true, data: { user, accessToken, refreshToken } });
+};
+```
+
+---
+
+### HIGH-04: `createResource` Has No Authorization — Any User Can Create Resources
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [resources.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/resources.controller.ts#L299-L314) + [resources.routes.ts](file:///d:/ai-learning-dashboard/server/src/routes/resources.routes.ts#L18) |
+| **Impact** | Any authenticated user can inject arbitrary content (XSS via URLs, spam) into the resource library |
+
+The route comment says `Private (Admin)` but only `protect` middleware is applied — no admin role check. Additionally, `req.body` is passed directly to `Resource.create()` without validation.
+
+**Remediation:**
+```typescript
+router.post('/', protect, requireRole('admin'), validateResourceBody, createResource);
+```
+
+---
+
+### HIGH-05: No Input Sanitization on Chat Messages
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [assistant.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/assistant.controller.ts#L555-L598) |
+| **OWASP** | A03:2021 — Injection |
+| **Impact** | Stored XSS if chat messages are rendered without escaping; NoSQL injection via unvalidated content |
+
+**The Problem:** The `sendMessage` controller stores user input directly into MongoDB without validation or sanitization:
+
+```typescript
+const { content } = req.body;
+// No length check, no sanitization, no HTML stripping
+const userMessage = await ChatMessage.create({
+    userId: req.user?._id,
+    type: 'user',
+    content, // Direct storage of user input
+});
+```
+
+**Risks:**
+- Users can send multi-MB messages (no length limit) → database bloat
+- HTML/script injection stored in DB → Stored XSS if rendered in frontend
+- NoSQL injection via crafted `content` values
+
+**Remediation:**
+```typescript
+import { body } from 'express-validator';
+
+// Validation middleware
+const validateChatMessage = [
+    body('content')
+        .trim()
+        .isLength({ min: 1, max: 2000 })
+        .withMessage('Message must be 1-2000 characters')
+        .escape(), // HTML-encode special characters
+    handleValidationErrors,
+];
+
+// Route
+router.post('/chat', validateChatMessage, sendMessage);
+```
+
+---
+
+### HIGH-06: Quiz Analytics — N+1 Query Pattern
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [quiz.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/quiz.controller.ts#L597-L675) |
+| **Impact** | O(N) database queries per analytics request; severe performance degradation at scale |
+
+**Affected Code:**
+
+```typescript
+// quiz.controller.ts:626-644
+for (const attempt of attempts) {
+    const quiz = await Quiz.findById(attempt.quizId); // N+1 QUERY!
+    if (!quiz) continue;
+    
+    for (const answer of attempt.answers) {
+        const question = quiz.questions.find(q => q.questionId === answer.questionId);
+        // ...
+    }
+}
+```
+
+**The Problem:** For each quiz attempt, a separate `Quiz.findById()` query is executed inside a loop. A user with 50 quiz attempts triggers **50 individual database queries** per analytics request.
+
+**Remediation:** Use `populate` or batch query:
+
+```typescript
+// Option 1: Populate
+const attempts = await QuizAttempt.find({ userId: req.user?._id }).populate('quizId');
+
+// Option 2: Single batch query
+const quizIds = [...new Set(attempts.map(a => a.quizId))];
+const quizzes = await Quiz.find({ _id: { $in: quizIds } });
+const quizMap = new Map(quizzes.map(q => [q._id.toString(), q]));
+
+for (const attempt of attempts) {
+    const quiz = quizMap.get(attempt.quizId.toString());
+    // ...
+}
+```
+
+---
+
+### HIGH-07: No Password Validation on `updatePassword` Endpoint
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [auth.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/auth.controller.ts#L317-L355) + [auth.routes.ts](file:///d:/ai-learning-dashboard/server/src/routes/auth.routes.ts#L14) |
+| **Impact** | Users can set weak passwords (e.g., "a") bypassing security policy |
+
+**The Problem:** The `PUT /api/auth/password` route uses only `protect` middleware. There are no validation middlewares applied (unlike `register` which uses `validatePassword`). The new password is directly set:
+
+```typescript
+user.password = newPassword; // No validation!
+await user.save();
+```
+
+The bcrypt pre-save hook will hash whatever is provided, but it won't enforce length or complexity.
+
+**Remediation:**
+```typescript
+router.put('/password', protect, [
+    body('currentPassword').notEmpty().withMessage('Current password required'),
+    ...validatePassword.map(v => body('newPassword').run(v)),
+    handleValidationErrors,
+], updatePassword);
+```
+
+---
+
+### HIGH-08: `express.json()` Has No Body Size Limit
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L51) |
+| **Impact** | DoS via large request bodies |
+
+```typescript
+app.use(express.json()); // Default limit is 100kb, but should be explicit
+```
+
+While Express defaults to 100kb, it's best practice to set this explicitly and potentially lower for specific routes:
+
+```typescript
+app.use(express.json({ limit: '10kb' }));
+// For routes that need larger payloads:
+router.post('/upload', express.json({ limit: '5mb' }), handler);
+```
+
+---
+
+### HIGH-09: Duplicate `dotenv.config()` Call
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High (Bug) |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L8-L36) |
+| **Impact** | Confusing code; `.env` loaded twice; potential race condition with env var validation |
+
+```typescript
+// Line 8
+dotenv.config();  // First call
+
+// ... env validation on lines 10-19
+
+// Line 36
+dotenv.config();  // Duplicate call — should be removed
+```
+
+---
+
+### HIGH-10: Token Blacklist Full-Token Storage — Storage Explosion
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [TokenBlacklist.ts](file:///d:/ai-learning-dashboard/server/src/models/TokenBlacklist.ts) + [auth.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/auth.controller.ts#L286-L294) |
+| **Impact** | Full JWT tokens (~1KB each) stored in DB; storage waste; slow blacklist lookups |
+
+**The Problem:** Each blacklisted token stores the **entire JWT string** (~800-1200 bytes). With many logouts, the `TokenBlacklist` collection grows rapidly. The `protect` middleware queries this collection on **every authenticated request** (line 145-148), doing a string-match against a potentially large table.
+
+**Remediation:** Store only the JWT ID (`jti` claim) instead of the full token. Add `jti` to token payloads and index it.
+
+---
+
+## 🟡 Medium Severity Findings
+
+### MED-01: Chat History Has Hard-Coded Limit of 50 Messages
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [assistant.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/assistant.controller.ts#L609-L611) |
+| **Impact** | Users lose older chat history with no pagination |
+
+```typescript
+const messages = await ChatMessage.find({ userId: req.user?._id })
+    .sort({ createdAt: 1 })
+    .limit(50);  // Hard limit, no pagination
+```
+
+**Remediation:** Implement cursor-based pagination:
+```typescript
+const { cursor, limit = 50 } = req.query;
+const query: Record<string, unknown> = { userId: req.user?._id };
+if (cursor) query._id = { $gt: cursor };
+const messages = await ChatMessage.find(query).sort({ createdAt: 1 }).limit(Number(limit));
+```
+
+---
+
+### MED-02: `updateSettings` Overwrites Entire Preferences Object
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [user.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/user.controller.ts#L34-L62) |
+| **Impact** | Partial updates reset unmentioned preferences to undefined |
+
+```typescript
+const user = await User.findByIdAndUpdate(req.user?._id, {
+    preferences: {
+        theme,
+        notifications,
+        emailUpdates,
+        language,
+        // Missing: accessibilityMode, twoFactorEnabled → reset to undefined!
+    },
+}, { new: true, runValidators: true });
+```
+
+**Remediation:** Use `$set` with dot notation:
+```typescript
+const updates: Record<string, unknown> = {};
+if (theme !== undefined) updates['preferences.theme'] = theme;
+if (notifications !== undefined) updates['preferences.notifications'] = notifications;
+// ... etc
+await User.findByIdAndUpdate(req.user?._id, { $set: updates }, { new: true });
+```
+
+---
+
+### MED-03: No Email Verification on Registration
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [auth.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/auth.controller.ts#L16-L141) |
+| **Impact** | Accounts created with fake/typo emails; no password recovery possible |
+
+The registration flow immediately creates a full user account with `User.create()` without any email verification step. There's no "forgot password" endpoint either.
+
+**Remediation:** Implement email verification:
+1. On register, create user with `isVerified: false`
+2. Send verification email with a signed, time-limited token
+3. Gate protected routes on `isVerified === true`
+
+---
+
+### MED-04: `startLearningPath` — Incorrect Duplicate Check
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium (Bug) |
+| **Component** | [learningPath.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/learningPath.controller.ts#L95) |
+| **Impact** | Users can create duplicate learning paths |
+
+```typescript
+let existingPath = await LearningPath.findOne({ userId, 'steps.title': template.title });
+```
+
+This queries for `steps.title` matching the **template title**, but step titles have the format `"Module: Milestone"`. This will never match the root template title. The check should be:
+
+```typescript
+let existingPath = await LearningPath.findOne({ userId, title: template.title });
+```
+
+---
+
+### MED-05: Quiz Seeding Race Condition
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [quiz.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/quiz.controller.ts#L349-L354) + [resources.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/resources.controller.ts#L201-L205) |
+| **Impact** | Concurrent requests can trigger duplicate data seeding |
+
+```typescript
+const count = await Quiz.countDocuments();
+if (count === 0) {
+    // RACE CONDITION: Two concurrent requests both see count=0
+    const quizzes = buildQuizzesFromBank();
+    await Quiz.insertMany(quizzes);
+}
+```
+
+Same pattern exists in `getResources` for default resource seeding. If two users hit these endpoints simultaneously on a fresh database, duplicate records are created.
+
+**Remediation:** Use `upsert` operations or a startup seed script instead of lazy seeding.
+
+---
+
+### MED-06: Error Handler Leaks Stack Traces
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [error.middleware.ts](file:///d:/ai-learning-dashboard/server/src/middleware/error.middleware.ts#L18-L19) |
+| **Impact** | Internal error details exposed to clients |
+
+```typescript
+console.error('Error:', err); // Full stack trace logged (OK for dev)
+
+res.status(error.statusCode || 500).json({
+    success: false,
+    error: error.message || 'Server Error', // Original error message exposed!
+});
+```
+
+In production, internal error messages (e.g., MongoDB connection strings, file paths) should not be sent to clients.
+
+**Remediation:**
+```typescript
+res.status(error.statusCode || 500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production' 
+        ? 'Internal Server Error' 
+        : error.message || 'Server Error',
+});
+```
+
+---
+
+### MED-07: Frontend Stores Tokens in `localStorage` — XSS Vulnerability
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [lib/api.ts](file:///d:/ai-learning-dashboard/lib/api.ts#L27-L35) |
+| **OWASP** | A07:2021 — Cross-Site Scripting |
+| **Impact** | Any XSS vulnerability allows token theft and session hijack |
+
+```typescript
+setToken(accessToken: string, refreshToken?: string) {
+    this.token = accessToken;
+    localStorage.setItem('accessToken', accessToken);
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+}
+```
+
+**Remediation:** Use `httpOnly` cookies for token storage on the backend. The frontend should set tokens via response cookies, not explicit `localStorage` calls.
+
+---
+
+### MED-08: Database Connection Has No Retry Logic
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [database.ts](file:///d:/ai-learning-dashboard/server/src/config/database.ts#L3-L14) |
+| **Impact** | Transient network issues cause permanent server exit |
+
+```typescript
+const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(mongoURI);
+    } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+        process.exit(1); // HARD EXIT on any failure — no retry
+    }
+};
+```
+
+**Remediation:** Add retry with exponential backoff:
+```typescript
+const connectDB = async (retries = 5, delay = 3000) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            await mongoose.connect(mongoURI);
+            console.log('✅ MongoDB Connected');
+            return;
+        } catch (error) {
+            console.error(`❌ Attempt ${i + 1}/${retries} failed:`, error);
+            if (i < retries - 1) await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
+        }
+    }
+    process.exit(1);
+};
+```
+
+---
+
+### MED-09: No Pagination on Quiz History / Attempts
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | Multiple controllers |
+| **Impact** | Large data payloads as user activity grows |
+
+Multiple endpoints return data with fixed or missing limits:
+- `getQuizHistory`: `limit(20)` — OK but no pagination
+- `getQuizAnalytics`: No limit at all — fetches **ALL** attempts
+- `getProgress`: Returns full `quizScores[]` and `studyTime[]` arrays
+
+---
+
+### MED-10: `updateProfile` No Input Validation
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [user.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/user.controller.ts#L8-L29) |
+| **Impact** | Arbitrary name/avatar values accepted |
+
+```typescript
+const { name, avatar } = req.body;
+// No validation! avatar can be a malicious URL
+const user = await User.findByIdAndUpdate(req.user?._id, { name, avatar }, ...);
+```
+
+---
+
+### MED-11: `process.env.JWT_ACCESS_EXPIRE` Used Without Type Safety
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [auth.middleware.ts](file:///d:/ai-learning-dashboard/server/src/middleware/auth.middleware.ts#L27-L29) |
+| **Impact** | Invalid env var silently accepted; token misconfiguration |
+
+```typescript
+return jwt.sign(payload, getJwtSecret(), {
+    expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m', // string or undefined
+});
+```
+
+If `JWT_ACCESS_EXPIRE` is set to an invalid value (e.g., `"abc"`), `jwt.sign` will silently produce tokens with unpredictable expiry.
+
+---
+
+### MED-12: Frontend `logout()` Doesn't Call Backend
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [lib/api.ts](file:///d:/ai-learning-dashboard/lib/api.ts#L137-L139) |
+| **Impact** | Tokens remain valid after client-side "logout" |
+
+```typescript
+logout() {
+    this.clearToken(); // Only clears localStorage!
+    // Never calls POST /api/auth/logout → token NOT blacklisted
+}
+```
+
+**Remediation:**
+```typescript
+async logout() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    await this.request('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+    });
+    this.clearToken();
+}
+```
+
+---
+
+### MED-13: No `express.json()` Error Handling for Malformed JSON
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L51) |
+| **Impact** | Malformed JSON sends raw Express error to client |
+
+When a client sends invalid JSON, Express throws a `SyntaxError` with status 400, but the error middleware doesn't specifically handle it — it may expose internal parsing details.
+
+---
+
+## 🔵 Low Severity Findings
+
+### LOW-01: Unused `joi` Dependency
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [package.json](file:///d:/ai-learning-dashboard/server/package.json#L28) |
+| **Impact** | Unnecessary dependency; supply chain surface |
+
+`joi` is listed in dependencies but never imported anywhere in the codebase. The project uses `express-validator` instead.
+
+---
+
+### LOW-02: `morgan` Logger in Production
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L50) |
+| **Impact** | Performance overhead; no log level configuration |
+
+```typescript
+app.use(morgan('dev')); // Always 'dev' format — verbose in production
+```
+
+**Remediation:**
+```typescript
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+```
+
+---
+
+### LOW-03: `notFound` Middleware Exposes Internal Route Structure
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [error.middleware.ts](file:///d:/ai-learning-dashboard/server/src/middleware/error.middleware.ts#L45-L49) |
+
+```typescript
+res.status(404).json({
+    success: false,
+    error: `Route ${req.originalUrl} not found`, // Confirms route structure
+});
+```
+
+Revealing the exact URL pattern in 404 responses helps attackers enumerate valid API routes.
+
+---
+
+### LOW-04: No Graceful Shutdown Handler
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [server.ts](file:///d:/ai-learning-dashboard/server/src/server.ts#L77-L80) |
+| **Impact** | In-flight requests lost on process termination |
+
+**Remediation:**
+```typescript
+const server = app.listen(PORT, () => { ... });
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        mongoose.connection.close();
+        process.exit(0);
+    });
+});
+```
+
+---
+
+### LOW-05: Quiz Questions Generated Fresh on Every `getQuizzes` Call
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [quiz.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/quiz.controller.ts#L15-L27) |
+| **Impact** | `shuffleArray` gives different question order each seed, but no consistency guarantee |
+
+The `buildQuizzesFromBank()` uses random shuffling. When quizzes are seeded (or reseeded), the question selection and order is random. Two `reseed` calls produce quizzes with different questions, making quiz IDs and historical analytics potentially inconsistent.
+
+---
+
+### LOW-06: `password` Field Select Inconsistency
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [User.ts](file:///d:/ai-learning-dashboard/server/src/models/User.ts#L18) |
+
+The User model has `select: false` on password but the schema defines `minlength: 6` while `validatePassword` middleware requires `minlength: 8`. This inconsistency means the Mongoose schema allows weaker passwords than the API validation:
+
+```typescript
+// User.ts - Schema allows 6 chars
+password: { type: String, required: true, minlength: 6 }
+
+// validation.middleware.ts - API requires 8 chars
+body('password').isLength({ min: 8 })
+```
+
+---
+
+### LOW-07: Hardcoded Welcome Message in Chat History
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [assistant.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/assistant.controller.ts#L614-L625) |
+
+When no messages exist, a fake welcome message with `id: 1` is returned. This hardcoded ID can conflict with real MongoDB ObjectIDs and confuses the data model.
+
+---
+
+### LOW-08: No Test Suite Exists
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [package.json](file:///d:/ai-learning-dashboard/server/package.json#L10) |
+| **Impact** | No automated regression prevention |
+
+```json
+"test": "echo \"Error: no test specified\" && exit 1"
+```
+
+Zero test files exist anywhere in the codebase. No unit, integration, or E2E tests.
+
+---
+
+### LOW-09: `learningPath.controller.ts` — Duplicate Step Template Code
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [learningPath.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/learningPath.controller.ts) |
+
+The template-to-steps conversion logic is copy-pasted in 3 places: `register` (auth.controller), `startLearningPath`, and `getLearningPath`. Any bug fix must be applied in all 3 locations.
+
+**Remediation:** Extract to a shared function:
+```typescript
+const convertTemplateToSteps = (template: LearningPathTemplate) => {
+    return template.modules.flatMap((module, moduleIdx) => 
+        module.milestones.map((milestone, msIdx) => ({ ... }))
+    );
+};
+```
+
+---
+
+### LOW-10: Inconsistent API Response Patterns
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | Various controllers |
+
+Most endpoints return `{ success, data }` but some return `{ success, message }` (logout) or `{ success, count, data }` (getQuizzes). The `ApiResponse<T>` type in `types/index.ts` allows all fields but consistency should be enforced.
+
+---
+
+## Component Impact Matrix
+
+| Component | Critical | High | Medium | Low |
+|-----------|----------|------|--------|-----|
+| **Auth System** | 2 (CRIT-02, CRIT-04) | 3 (HIGH-03, HIGH-07, HIGH-02) | 3 (MED-03, MED-07, MED-12) | 1 (LOW-06) |
+| **AI Assistant** | 1 (CRIT-03) | 2 (HIGH-01, HIGH-05) | 1 (MED-01) | 1 (LOW-07) |
+| **Quiz System** | 1 (CRIT-05) | 1 (HIGH-06) | 2 (MED-05, MED-09) | 1 (LOW-05) |
+| **Server Core** | 1 (CRIT-01) | 2 (HIGH-08, HIGH-09) | 2 (MED-06, MED-13) | 3 (LOW-02, LOW-03, LOW-04) |
+| **User/Profile** | — | 1 (HIGH-04) | 2 (MED-02, MED-10) | — |
+| **Database** | — | 1 (HIGH-10) | 1 (MED-08) | — |
+| **Learning Path** | — | — | 1 (MED-04) | 2 (LOW-09, LOW-10) |
+| **Testing** | — | — | — | 1 (LOW-08) |
+| **Dependencies** | — | — | — | 1 (LOW-01) |
+
+---
+
+## Remediation Priority Roadmap
+
+### 🚨 Phase 1: Immediate (1-2 days)
+
+| # | Issue | Effort | Impact |
+|---|-------|--------|--------|
+| 1 | CRIT-01 — Fix CORS configuration | 15 min | Closes API exposure |
+| 2 | CRIT-04 — Strengthen JWT secret | 10 min | Prevents token forgery |
+| 3 | CRIT-05 — Add RBAC to reseed endpoint | 30 min | Prevents data destruction |
+| 4 | HIGH-01 — Apply global rate limiter | 15 min | Prevents DoS |
+| 5 | HIGH-02 — Reduce login rate limit to 5 | 5 min | Prevents brute force |
+| 6 | HIGH-09 — Remove duplicate dotenv call | 1 min | Code correctness |
+
+### ⚡ Phase 2: Short-term (1 week)
+
+| # | Issue | Effort | Impact |
+|---|-------|--------|--------|
+| 7 | CRIT-03 — Wire assistant page to backend API | 2h | Enables core feature |
+| 8 | HIGH-03 — Implement Firebase↔JWT bridge | 4h | Fixes social login |
+| 9 | HIGH-05 — Add chat input validation | 1h | Prevents injection |
+| 10 | HIGH-07 — Add password validation to update endpoint | 30 min | Enforces security policy |
+| 11 | MED-07 — Migrate to httpOnly cookies | 4h | Prevents token theft |
+| 12 | MED-12 — Call backend on logout | 30 min | Enables token revocation |
+
+### 🔧 Phase 3: Medium-term (2-3 weeks)
+
+| # | Issue | Effort | Impact |
+|---|-------|--------|--------|
+| 13 | CRIT-02 — Add MongoDB transactions to registration | 3h | Ensures data consistency |
+| 14 | HIGH-06 — Fix N+1 query in quiz analytics | 2h | Performance improvement |
+| 15 | HIGH-04 — Add admin guard to resource creation | 1h | Access control |
+| 16 | MED-02 — Fix settings partial update | 1h | Data integrity |
+| 17 | MED-04 — Fix duplicate learning path check | 15 min | Bug fix |
+| 18 | MED-06 — Environment-aware error messages | 30 min | Security |
+| 19 | MED-08 — Add DB connection retry logic | 1h | Reliability |
+
+### 📋 Phase 4: Long-term (1-2 months)
+
+| # | Issue | Effort | Impact |
+|---|-------|--------|--------|
+| 20 | MED-03 — Email verification system | 1-2 days | Security + trust |
+| 21 | HIGH-10 — Optimize token blacklist (jti) | 4h | Performance |
+| 22 | LOW-08 — Establish test suite | 2-3 days | Reliability |
+| 23 | LOW-09 — Deduplicate template conversion | 1h | Maintainability |
+| 24 | MED-05 — Fix seeding race condition | 2h | Data integrity |
+| 25 | LOW-04 — Graceful shutdown handler | 30 min | Ops reliability |
+
+---
+
+## 📎 Supplementary Findings (Second Pass)
+
+The following issues were discovered during a second-pass review of models, scripts, and data layer files.
+
+### SUP-01: Demo User Script Uses Weak Password `"password"` 🟠
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟠 High |
+| **Component** | [create_demo_user.ts](file:///d:/ai-learning-dashboard/server/src/scripts/create_demo_user.ts#L18-L19) |
+| **Impact** | Demo user bypasses password policy; if script runs in production, creates exploitable account |
+
+```typescript
+const email = 'sarah@example.com';
+const password = 'password';  // Bypasses all validation — goes directly to User.create()
+```
+
+This script calls `User.create()` directly, which only applies the Mongoose schema `minlength: 6` validation (which `"password"` passes). The `express-validator` password strength rules (`validatePassword`) are only applied at the route level and are completely bypassed here.
+
+**Risks:**
+- If this script is accidentally run in production, it creates a user with a trivially guessable password
+- The email `sarah@example.com` is predictable — an attacker could try this combination
+
+**Remediation:**
+- Use a strong, random password: `const password = crypto.randomUUID() + 'A1!';`
+- Or better yet, require the password as a CLI argument: `const password = process.argv[2];`
+- Never commit demo credentials
+
+---
+
+### SUP-02: Progress Document — Unbounded Array Growth 🟡
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [Progress.ts](file:///d:/ai-learning-dashboard/server/src/models/Progress.ts#L64-L82) |
+| **Impact** | Document size grows indefinitely; MongoDB 16MB BSON limit; degrading performance |
+
+The Progress model stores `quizScores[]`, `studyTime[]`, and `improvementData[]` as **embedded arrays** within a single document per user. These arrays grow on every quiz submission and study session, with no cap or archival strategy.
+
+```typescript
+quizScores: [{
+    week: String,
+    quizId: String,
+    score: Number,
+    totalQuestions: Number,
+    correctAnswers: Number,
+    timeSpentMinutes: Number,
+    date: { type: Date, default: Date.now },
+}],
+studyTime: [{
+    day: String,
+    hours: Number,
+    topicId: String,
+    date: { type: Date, default: Date.now },
+}],
+```
+
+**Impact Scenario:** A user who takes 5 quizzes/week and logs study time daily will accumulate ~500+ entries/year. Over time, every `Progress.findOne()` query returns an increasingly large document. At scale, this hits the **16MB BSON document limit**.
+
+**Remediation Options:**
+1. **Cap arrays** using `$slice` operator: `$push: { quizScores: { $each: [newScore], $slice: -100 } }`
+2. **Separate collection** for time-series data: Create `StudySession` and `QuizResult` as independent collections
+3. **Aggregation** for analytics instead of storing computed summaries
+
+---
+
+### SUP-03: `LearningPath` Missing `userId` Unique + Active Compound Index 🟡
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [LearningPath.ts](file:///d:/ai-learning-dashboard/server/src/models/LearningPath.ts#L49-L53) |
+| **Impact** | No uniqueness constraint; users can accumulate unlimited paths |
+
+The `LearningPath` model has a `userId` field but no uniqueness constraint on `{userId, title}`. The existing indexes (`userId + isActive`, `userId + createdAt`) help with query performance but don't prevent duplicates.
+
+Multiple controllers use `LearningPath.findOne({ userId }).sort({ updatedAt: -1 })` — this "latest path wins" pattern means orphan paths accumulate in the database with no cleanup.
+
+**Remediation:**
+```typescript
+learningPathSchema.index({ userId: 1, title: 1 }, { unique: true });
+```
+
+---
+
+### SUP-04: `parseInt(stepIndex)` Without Radix & No Bounds Check 🟡
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [learningPath.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/learningPath.controller.ts#L240-L263) |
+| **Impact** | Array index out of bounds → potential crash or undefined behavior |
+
+```typescript
+const step = learningPath.steps[parseInt(stepIndex)]; // No bounds check
+if (!step) { ... }
+
+// Later:
+if (learningPath.currentStepIndex === parseInt(stepIndex)) { // Parsed again
+```
+
+**Issues:**
+1. `parseInt` without explicit radix (`parseInt(stepIndex, 10)`)
+2. `stepIndex` could be a negative number, `NaN`, or exceed `steps.length`
+3. Array access with out-of-bounds index returns `undefined` in JS but no explicit 400 error
+
+**Remediation:**
+```typescript
+const idx = parseInt(stepIndex, 10);
+if (isNaN(idx) || idx < 0 || idx >= learningPath.steps.length) {
+    res.status(400).json({ success: false, error: 'Invalid step index' });
+    return;
+}
+const step = learningPath.steps[idx];
+```
+
+---
+
+### SUP-05: Route Ordering Bug — `/:id` Catches `/user/recommended` 🟡
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium (Bug) |
+| **Component** | [resources.routes.ts](file:///d:/ai-learning-dashboard/server/src/routes/resources.routes.ts#L12-L18) |
+| **Impact** | `GET /api/resources/user/recommended` may not work correctly |
+
+```typescript
+// Public routes
+router.get('/', getResources);
+router.get('/:id', getResource);         // Catches EVERYTHING after /
+
+// Protected routes
+router.get('/user/recommended', protect, getRecommendedResources);  // Never reached!
+```
+
+Express routes are matched in definition order. `GET /api/resources/user/recommended` will match `/:id` first (with `id = "user"`), and `getResource` will try to find a MongoDB document with ID `"user"` — which will fail with a CastError or return 404. The `/user/recommended` route is **unreachable**.
+
+**Remediation:** Move specific routes BEFORE parameterized routes:
+```typescript
+router.get('/', getResources);
+router.get('/user/recommended', protect, getRecommendedResources); // FIRST
+router.get('/:id', getResource);                                    // LAST
+```
+
+---
+
+### SUP-06: Learning Path Templates Exposed Without Authentication 🔵
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🔵 Low |
+| **Component** | [learningPath.routes.ts](file:///d:/ai-learning-dashboard/server/src/routes/learningPath.routes.ts#L17-L18) |
+| **Impact** | Internal curriculum structure fully exposed to unauthenticated users |
+
+```typescript
+// Public routes — NO auth required
+router.get('/templates', getPathTemplates);
+router.get('/templates/:templateId', getTemplateDetails);
+```
+
+The full learning path structure, modules, milestones, and checklist items are exposed to anyone. While this may be intentional for marketing pages, it also exposes internal `moduleId` and `milestoneId` values.
+
+---
+
+### SUP-07: `SkillGap` Pre-save Hook Bypassed by `findOneAndUpdate` 🟡
+
+| Field | Detail |
+|-------|--------|
+| **Severity** | 🟡 Medium |
+| **Component** | [SkillGap.ts](file:///d:/ai-learning-dashboard/server/src/models/SkillGap.ts#L36-L41) + [skillGaps.controller.ts](file:///d:/ai-learning-dashboard/server/src/controllers/skillGaps.controller.ts#L66-L73) |
+| **Impact** | `gap` field not calculated on assessment updates |
+
+The SkillGap model has a `pre('save')` hook that calculates `skill.gap = targetLevel - currentLevel`. However, `submitAssessment` uses `findOneAndUpdate()`:
+
+```typescript
+// SkillGap.ts — pre-save hook
+skillGapSchema.pre('save', function (next) {
+    this.skills.forEach((skill) => {
+        skill.gap = skill.targetLevel - skill.currentLevel;
+    });
+    next();
+});
+
+// skillGaps.controller.ts — bypasses the hook!
+const skillGap = await SkillGap.findOneAndUpdate(
+    { userId: req.user?._id },
+    { skills: processedSkills, lastAssessmentDate: new Date() },
+    { new: true, upsert: true }
+);
+```
+
+Mongoose `findOneAndUpdate` does NOT trigger `pre('save')` hooks. The `gap` calculation in the controller's `processedSkills` does compute the gap manually, so the actual result is correct, but the model hook is dead code — creating a maintenance trap if someone later relies on it.
+
+---
+
+### Updated Statistics
+
+| Severity | Original Count | + Supplementary | **Total** |
+|----------|---------------|-----------------|-----------|
+| 🔴 Critical | 5 | 0 | **5** |
+| 🟠 High | 10 | 1 (SUP-01) | **11** |
+| 🟡 Medium | 13 | 5 (SUP-02–05, SUP-07) | **18** |
+| 🔵 Low | 10 | 1 (SUP-06) | **11** |
+| **Total** | **38** | **7** | **45** |
+
+---
+
+> [!IMPORTANT]
+> **Phase 1 items should be addressed before any production deployment.** CRIT-01 (CORS) and CRIT-05 (unprotected reseed) are exploitable with zero effort by any external actor or authenticated user respectively. SUP-05 (route ordering bug) is a functional breakage that should also be fixed immediately.
+
+> [!TIP]
+> Start by creating the `requireRole` middleware (for CRIT-05 and HIGH-04), as it blocks the most impactful access control gaps with minimal code change. Then proceed to CORS, rate limiting, and the assistant page rewiring.
+
+> [!WARNING]
+> SUP-02 (unbounded Progress arrays) is a **ticking time bomb**. While it won't cause issues with a few users, at scale it will hit MongoDB's 16MB BSON document limit and cause hard failures. Plan the migration to separate collections early.

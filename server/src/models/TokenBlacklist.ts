@@ -1,9 +1,13 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Model } from 'mongoose';
 import { ITokenBlacklist } from '../types';
+
+interface TokenBlacklistModel extends Model<ITokenBlacklist> {
+    isBlacklisted(jti: string): Promise<boolean>;
+}
 
 const tokenBlacklistSchema = new Schema<ITokenBlacklist>(
     {
-        token: {
+        jti: {
             type: String,
             required: true,
             unique: true,
@@ -27,15 +31,16 @@ const tokenBlacklistSchema = new Schema<ITokenBlacklist>(
 // Auto-delete expired blacklisted tokens
 tokenBlacklistSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// Check if token is blacklisted
-tokenBlacklistSchema.statics.isBlacklisted = async function (token: string): Promise<boolean> {
+// Check if token (jti) is blacklisted
+tokenBlacklistSchema.statics.isBlacklisted = async function (jti: string): Promise<boolean> {
+    if (!jti) return false;
     const entry = await this.findOne({
-        token,
+        jti,
         expiresAt: { $gt: new Date() },
     });
     return !!entry;
 };
 
-const TokenBlacklist = mongoose.model<ITokenBlacklist>('TokenBlacklist', tokenBlacklistSchema);
+const TokenBlacklist = mongoose.model<ITokenBlacklist, TokenBlacklistModel>('TokenBlacklist', tokenBlacklistSchema);
 
 export default TokenBlacklist;

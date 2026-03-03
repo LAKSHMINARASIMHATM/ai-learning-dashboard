@@ -26,12 +26,22 @@ export default function LoginPage() {
             const user = result.user;
             const idToken = await user.getIdToken();
 
-            // Here you would typically send the idToken to your backend to verify and create a session
-            // For now, we'll simulate a successful login
+            // HIGH-03: Exchange Firebase token for Backend JWT
+            const backendResult = await api.socialLogin({
+                idToken,
+                email: user.email || '',
+                name: user.displayName || undefined,
+                avatar: user.photoURL || undefined
+            });
+
+            if (!backendResult.success) {
+                throw new Error(backendResult.error || 'Failed to sync with backend server');
+            }
+
             toast.success(`Welcome ${user.displayName || 'back'}!`);
 
-            // Store minimal user info
-            localStorage.setItem('user', JSON.stringify({
+            // Store user info (api client handles the token)
+            localStorage.setItem('user', JSON.stringify(backendResult.data?.user || {
                 name: user.displayName,
                 email: user.email,
                 avatar: user.photoURL

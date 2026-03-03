@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid'; // I'll use crypto if uuid isn't there
+import crypto from 'crypto';
 import User from '../models/User';
 import TokenBlacklist from '../models/TokenBlacklist';
 import RefreshToken from '../models/RefreshToken';
 import { AuthRequest, TokenPayload, AuthTokens } from '../types';
+
+// Helper for unique ID generation
+const generateJti = () => crypto.randomUUID();
 
 // Validate JWT_SECRET exists
 const getJwtSecret = (): string => {
@@ -11,9 +16,12 @@ const getJwtSecret = (): string => {
     if (!secret) {
         throw new Error('FATAL: JWT_SECRET environment variable is not set');
     }
-    if (secret.length < 32) {
-        console.warn('WARNING: JWT_SECRET should be at least 32 characters for security');
+
+    // CRIT-04: Enforce minimum secret length in production
+    if (process.env.NODE_ENV === 'production' && secret.length < 32) {
+        throw new Error('FATAL: JWT_SECRET must be at least 32 characters in production');
     }
+
     return secret;
 };
 
@@ -21,6 +29,7 @@ const getJwtSecret = (): string => {
 export const generateAccessToken = (userId: string): string => {
     const payload: TokenPayload = {
         id: userId,
+        jti: generateJti(),
         type: 'access',
     };
 
@@ -33,6 +42,7 @@ export const generateAccessToken = (userId: string): string => {
 export const generateRefreshToken = (userId: string): string => {
     const payload: TokenPayload = {
         id: userId,
+        jti: generateJti(),
         type: 'refresh',
     };
 
@@ -128,9 +138,15 @@ export const protect = async (
     try {
         let token: string | undefined;
 
-        // Extract token from Authorization header
+        // Extract token from Authorization header or Cookie (MED-07)
         if (req.headers.authorization?.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
+        } else if (req.headers.cookie) {
+            // Manual parsing in case cookie-parser isn't installed
+            const cookies = Object.fromEntries(
+                req.headers.cookie.split(';').map(c => c.trim().split('='))
+            );
+            token = cookies['accessToken'];
         }
 
         if (!token) {
@@ -141,23 +157,20 @@ export const protect = async (
             return;
         }
 
-        // Check if token is blacklisted
-        const isBlacklisted = await TokenBlacklist.findOne({
-            token,
-            expiresAt: { $gt: new Date() },
-        });
-
-        if (isBlacklisted) {
-            res.status(401).json({
-                success: false,
-                error: 'Token has been revoked',
-            });
-            return;
-        }
-
-        // Verify token
+        // Verify token first to get jti
         try {
             const decoded = verifyAccessToken(token);
+
+            // HIGH-10: Check if token jti is blacklisted (Efficient lookup)
+            const isBlacklisted = await (TokenBlacklist as any).isBlacklisted(decoded.jti);
+
+            if (isBlacklisted) {
+                res.status(401).json({
+                    success: false,
+                    error: 'Token has been revoked',
+                });
+                return;
+            }
 
             // Get user from database
             const user = await User.findById(decoded.id);

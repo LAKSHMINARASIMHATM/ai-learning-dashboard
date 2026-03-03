@@ -123,6 +123,14 @@ const userSchema = new Schema<IUser>(
             type: Schema.Types.ObjectId,
             ref: 'LearningPath',
         },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        verificationToken: String,
+        verificationTokenExpires: Date,
+        resetPasswordToken: String,
+        resetPasswordExpires: Date,
         lastActive: {
             type: Date,
             default: Date.now,

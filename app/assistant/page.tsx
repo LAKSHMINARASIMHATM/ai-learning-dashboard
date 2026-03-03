@@ -1,138 +1,208 @@
 'use client';
 
-import React from "react"
-
+import React, { useEffect, useRef } from "react"
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Send, Lightbulb } from 'lucide-react';
+import { Send, Lightbulb, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { api } from '@/lib/api';
+import { toast } from "sonner"
 
-const initialMessages = [
-  {
-    id: 1,
-    type: 'ai',
-    content:
-      "Hello! I'm your AI Learning Tutor. I'm here to help you master any topic and answer all your questions. What would you like to learn about today?",
-  },
-];
-
-const suggestions = [
-  "Explain React hooks to me",
-  "Help me with TypeScript generics",
-  "What's the best way to structure APIs?",
-  "How do I optimize database queries?",
-];
+interface ChatMessage {
+  _id?: string;
+  id?: number | string;
+  type: 'user' | 'ai';
+  content: string;
+  createdAt?: string;
+}
 
 export default function AssistantPage() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([
+    "Explain React hooks to me",
+    "Help me with TypeScript generics",
+    "What's the best way to structure APIs?",
+    "How do I optimize database queries?",
+  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  // Auto-scroll to bottom of chat
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    // Add user message
-    const userMessage = {
-      id: messages.length + 1,
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  // Load chat history and suggestions
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const historyRes = await api.getChatHistory();
+        if (historyRes.success && historyRes.data) {
+          setMessages(historyRes.data as ChatMessage[]);
+        }
+
+        const suggestionsRes = await api.getSuggestions();
+        if (suggestionsRes.success && suggestionsRes.data) {
+          setSuggestions(suggestionsRes.data as string[]);
+        }
+      } catch (error) {
+        console.error("Failed to load assistant data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userInput = input.trim();
+
+    // Optimistically add user message
+    const userMsg: ChatMessage = {
+      id: Date.now(),
       type: 'user',
-      content: input,
+      content: userInput,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const aiMessage = {
-        id: messages.length + 2,
-        type: 'ai',
-        content: generateMockAIResponse(input),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+    try {
+      const result = await api.sendMessage(userInput);
+      if (result.success && result.data) {
+        const data = result.data as any;
+        // Backend returns AI message in result.data.aiMessage
+        const aiMsg: ChatMessage = data.aiMessage || {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: data.content || "I'm sorry, I couldn't generate a response."
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        toast.error(result.error || "Failed to get AI response");
+      }
+    } catch (error) {
+      toast.error("Network error. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
+  };
+
+  const clearChat = async () => {
+    if (!confirm("Are you sure you want to clear your chat history?")) return;
+
+    try {
+      const result = await api.clearChatHistory();
+      if (result.success) {
+        setMessages([]);
+        toast.success("Chat history cleared");
+      }
+    } catch (error) {
+      toast.error("Failed to clear chat");
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setInput(suggestion);
+    // Focus the input field? Or just send it?
+    // Let's just set it and let user click send for better UX (editing possible)
   };
 
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-foreground mb-2">AI Learning Assistant</h2>
-        <p className="text-muted-foreground">
-          Get instant help, explanations, and guidance from your personal AI tutor
-        </p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-foreground mb-2">AI Learning Assistant</h2>
+          <p className="text-muted-foreground">
+            Get instant help, explanations, and guidance from your personal AI tutor
+          </p>
+        </div>
+        {messages.length > 0 && (
+          <Button variant="outline" size="sm" onClick={clearChat} className="text-destructive border-destructive hover:bg-destructive/10">
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear Chat
+          </Button>
+        )}
       </div>
 
-      <Card className="h-[600px] flex flex-col">
+      <Card className="h-[600px] flex flex-col border-border shadow-md">
         {/* Chat Messages */}
         <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="text-5xl mb-4">🤖</div>
-                <p className="text-muted-foreground">Start a conversation with your AI tutor</p>
+              <div className="text-center opacity-70">
+                <div className="text-6xl mb-4">🧠</div>
+                <h3 className="text-xl font-semibold mb-2">Ready to Learn?</h3>
+                <p className="text-muted-foreground max-w-sm">
+                  Ask a question above or choose a suggestion below to start your learning session.
+                </p>
               </div>
             </div>
           ) : (
             <>
-              {messages.map((message) => (
+              {messages.map((message, idx) => (
                 <div
-                  key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  key={message._id || message.id || idx}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-lg ${
-                      message.type === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-muted text-foreground rounded-bl-none'
-                    }`}
+                    className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${message.type === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-none'
+                      : 'bg-muted text-foreground rounded-bl-none border border-border/50'
+                      }`}
                   >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-muted text-foreground px-4 py-3 rounded-lg rounded-bl-none">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
+                  <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-bl-none shadow-sm animate-pulse">
+                    <div className="flex gap-1.5 h-4 items-center">
+                      <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce" />
                       <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                        className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce"
                         style={{ animationDelay: '0.2s' }}
                       />
                       <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                        className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce"
                         style={{ animationDelay: '0.4s' }}
                       />
                     </div>
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </>
           )}
         </CardContent>
 
         {/* Input Area */}
-        <div className="border-t border-border p-6 space-y-4">
-          {messages.length === 1 && !isLoading && (
-            <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                <Lightbulb className="w-3 h-3" />
-                Suggested topics
+        <div className="border-t border-border p-6 space-y-5 bg-muted/20">
+          {!isLoading && messages.length <= 1 && (
+            <div className="animate-in fade-in zoom-in duration-500">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                <Lightbulb className="w-3.5 h-3.5 text-yellow-500" />
+                Quick Suggestions
               </p>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {suggestions.map((suggestion, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-left text-sm p-3 rounded-lg bg-muted hover:bg-muted/80 transition text-foreground"
+                    className="text-left text-xs px-3 py-2 rounded-full border border-border bg-background hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 text-foreground"
                   >
                     {suggestion}
                   </button>
@@ -141,91 +211,28 @@ export default function AssistantPage() {
             </div>
           )}
 
-          <form onSubmit={handleSendMessage} className="flex gap-2">
+          <form onSubmit={handleSendMessage} className="flex gap-2 relative">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
-              className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Ask a technical question..."
+              className="flex-1 px-4 py-3 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all pr-12"
               disabled={isLoading}
             />
             <Button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4"
+              className="absolute right-1 top-1 bottom-1 h-auto aspect-square rounded-lg p-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
             >
               <Send className="w-4 h-4" />
             </Button>
           </form>
+          <p className="text-[10px] text-center text-muted-foreground/60">
+            Powered by your AI Learning Tutor. Questions are persisited to your profile.
+          </p>
         </div>
       </Card>
     </DashboardLayout>
   );
-}
-
-function generateMockAIResponse(userInput: string): string {
-  const responses: { [key: string]: string } = {
-    hook: `React Hooks are functions that let you use state and other React features in functional components. The most common hooks are:
-
-1. **useState** - Adds state to functional components
-2. **useEffect** - Handles side effects like data fetching
-3. **useContext** - Access context values without nesting
-4. **useReducer** - Complex state management
-5. **useCallback** - Memoize callback functions
-
-Would you like me to explain any of these in detail?`,
-
-    generics: `TypeScript Generics allow you to write reusable code that works with multiple types. Here's a basic example:
-
-\`\`\`typescript
-function identity<T>(arg: T): T {
-  return arg;
-}
-
-let output = identity<string>("hello");
-\`\`\`
-
-The <T> is a type variable that will be replaced with the actual type when the function is called.`,
-
-    api: `Best practices for RESTful APIs:
-
-1. **Use proper HTTP methods** - GET, POST, PUT, DELETE
-2. **Version your API** - /api/v1/
-3. **Use consistent naming** - /users, /products
-4. **Proper status codes** - 200, 404, 500
-5. **Error handling** - Return meaningful error messages
-6. **Authentication** - Use JWT or OAuth
-7. **Rate limiting** - Protect your API
-
-Would you like examples of any of these?`,
-
-    database: `To optimize database queries:
-
-1. **Add indexes** on frequently searched columns
-2. **Avoid SELECT *** - Only fetch needed columns
-3. **Use JOINs efficiently** - Join tables at DB level
-4. **Lazy load data** - Load related data only when needed
-5. **Use pagination** - Don't load all records at once
-6. **Monitor slow queries** - Use EXPLAIN PLAN
-
-What's your current database setup?`,
-  };
-
-  const input_lower = userInput.toLowerCase();
-
-  for (const [key, response] of Object.entries(responses)) {
-    if (input_lower.includes(key)) {
-      return response;
-    }
-  }
-
-  return `That's a great question! Based on your learning path, I'd recommend exploring this topic step by step. Would you like me to:
-
-1. Break it down into smaller concepts?
-2. Provide code examples?
-3. Link you to relevant learning resources?
-4. Quiz you on your understanding?
-
-Let me know how I can help!`;
 }

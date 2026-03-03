@@ -8,15 +8,18 @@ interface CustomError extends Error {
 
 export const errorHandler = (
     err: CustomError,
-    req: Request,
+    _req: Request,
     res: Response,
     _next: NextFunction
 ): void => {
     let error = { ...err };
     error.message = err.message;
 
-    // Log error for debugging
-    console.error('Error:', err);
+    // Log error for debugging (server-side only)
+    console.error('Error:', err.message);
+    if (process.env.NODE_ENV !== 'production') {
+        console.error(err.stack);
+    }
 
     // Mongoose bad ObjectId
     if (err.name === 'CastError') {
@@ -36,15 +39,21 @@ export const errorHandler = (
         error.statusCode = 400;
     }
 
-    res.status(error.statusCode || 500).json({
+    // In production, hide internal error details
+    const statusCode = error.statusCode || 500;
+    const message = statusCode === 500 && process.env.NODE_ENV === 'production'
+        ? 'Internal Server Error'
+        : error.message || 'Server Error';
+
+    res.status(statusCode).json({
         success: false,
-        error: error.message || 'Server Error',
+        error: message,
     });
 };
 
-export const notFound = (req: Request, res: Response, _next: NextFunction): void => {
+export const notFound = (_req: Request, res: Response, _next: NextFunction): void => {
     res.status(404).json({
         success: false,
-        error: `Route ${req.originalUrl} not found`,
+        error: 'The requested resource was not found',
     });
 };

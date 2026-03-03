@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { protect } from '../middleware/auth.middleware';
+import { requireRole } from '../middleware/rbac.middleware';
 import {
     getQuizzes,
     getQuiz,
@@ -19,8 +20,9 @@ router.get('/', getQuizzes);
 router.get('/history', getQuizHistory);
 router.get('/analytics', getQuizAnalytics);
 router.get('/recommendations', getQuizRecommendations);
-router.post('/reseed', reseedQuizzes);
+router.post('/reseed', requireRole('admin'), reseedQuizzes);
 router.get('/:id', getQuiz);
 router.post('/:id/submit', submitQuizAttempt);
 
 export default router;
+

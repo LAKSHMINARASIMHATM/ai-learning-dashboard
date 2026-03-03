@@ -98,8 +98,22 @@ const progressSchema = new Schema<IProgress>(
     }
 );
 
-// Update streak when study time is logged
+// Update streak and cap array sizes (SUP-02: prevent unbounded growth)
 progressSchema.pre('save', function (next) {
+    // 1. Cap history arrays to 100 items to prevent document bloat
+    const MAX_HISTORY = 100;
+
+    if (this.quizScores.length > MAX_HISTORY) {
+        this.quizScores = this.quizScores.slice(-MAX_HISTORY);
+    }
+    if (this.studyTime.length > MAX_HISTORY) {
+        this.studyTime = this.studyTime.slice(-MAX_HISTORY);
+    }
+    if (this.assignments.length > MAX_HISTORY) {
+        this.assignments = this.assignments.slice(-MAX_HISTORY);
+    }
+
+    // 2. Update streak when study time is logged
     if (this.isModified('studyTime') && this.studyTime.length > 0) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -109,12 +123,10 @@ progressSchema.pre('save', function (next) {
 
         const diffDays = Math.floor((today.getTime() - lastStudy.getTime()) / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0) {
-            // Same day, no streak change
-        } else if (diffDays === 1) {
+        if (diffDays === 1) {
             // Consecutive day
             this.streakDays += 1;
-        } else {
+        } else if (diffDays > 1) {
             // Streak broken
             this.streakDays = 1;
         }

@@ -623,8 +623,13 @@ export const getQuizAnalytics = async (
         const questionErrors: Record<string, number> = {};
         const topicScores: Record<string, { correct: number; total: number }> = {};
 
+        // Batch-load all quizzes for these attempts (fixes N+1 query)
+        const quizIds = [...new Set(attempts.map(a => a.quizId.toString()))];
+        const quizzes = await Quiz.find({ _id: { $in: quizIds } });
+        const quizMap = new Map(quizzes.map(q => [q._id.toString(), q]));
+
         for (const attempt of attempts) {
-            const quiz = await Quiz.findById(attempt.quizId);
+            const quiz = quizMap.get(attempt.quizId.toString());
             if (!quiz) continue;
 
             for (const answer of attempt.answers) {

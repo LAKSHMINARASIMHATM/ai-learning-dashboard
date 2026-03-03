@@ -3,13 +3,15 @@ import LearningPath from '../models/LearningPath';
 import Progress from '../models/Progress';
 import User from '../models/User';
 import { AuthRequest } from '../types';
-import {
-    allLearningPaths,
-    getPathById,
-    LearningPathTemplate,
-    Milestone,
-    ChecklistItem
-} from '../data/learningPathTemplates';
+import { convertTemplateToSteps } from './auth.controller';
+import { allLearningPaths, getPathById } from '../data/learningPathTemplates';
+
+// Helper: validate and parse a step index from route params
+const parseStepIndex = (stepIndex: string, stepsLength: number): number | null => {
+    const idx = parseInt(stepIndex, 10);
+    if (isNaN(idx) || idx < 0 || idx >= stepsLength) return null;
+    return idx;
+};
 
 // @desc    Get available learning path templates
 // @route   GET /api/learning-path/templates
@@ -30,6 +32,7 @@ export const getPathTemplates = async (
             moduleCount: path.modules.length,
             outcomes: path.outcomes,
             targetRoles: path.targetRoles,
+            tags: path.tags,
         }));
 
         res.status(200).json({
@@ -91,8 +94,8 @@ export const startLearningPath = async (
             return;
         }
 
-        // Check if user already has this path
-        let existingPath = await LearningPath.findOne({ userId, 'steps.title': template.title });
+        // Check if user already has this path (fix: match by title, not steps.title)
+        const existingPath = await LearningPath.findOne({ userId, title: template.title });
         if (existingPath) {
             res.status(200).json({
                 success: true,
@@ -102,29 +105,8 @@ export const startLearningPath = async (
             return;
         }
 
-        // Convert template to learning path with checklist structure
-        const steps = template.modules.flatMap((module, moduleIdx) =>
-            module.milestones.map((milestone, msIdx) => ({
-                title: `${module.title}: ${milestone.title}`,
-                description: milestone.description,
-                order: moduleIdx * 10 + msIdx + 1,
-                completed: false,
-                estimatedTime: milestone.checklistItems.reduce((sum, item) => sum + item.estimatedHours * 60, 0),
-                milestoneId: milestone.id,
-                moduleId: module.id,
-                checklist: milestone.checklistItems.map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    description: item.description,
-                    completed: false,
-                    estimatedHours: item.estimatedHours,
-                    resourceType: item.resourceType,
-                    isRequired: item.isRequired,
-                })),
-                quizTopic: milestone.quizTopic,
-                passingScore: milestone.passingScore,
-            }))
-        );
+        // Convert template to learning path using shared helper
+        const steps = convertTemplateToSteps(template);
 
         const learningPath = await LearningPath.create({
             userId,
@@ -133,6 +115,7 @@ export const startLearningPath = async (
             category: template.category,
             difficulty: template.difficulty,
             steps,
+            tags: template.tags,
             currentStepIndex: 0,
             progress: 0,
             totalWeeks: template.totalWeeks,
@@ -237,11 +220,12 @@ export const updateChecklistItem = async (
             return;
         }
 
-        const step = learningPath.steps[parseInt(stepIndex)];
-        if (!step) {
-            res.status(404).json({ success: false, error: 'Step not found' });
+        const idx = parseStepIndex(stepIndex, learningPath.steps.length);
+        if (idx === null) {
+            res.status(400).json({ success: false, error: 'Invalid step index' });
             return;
         }
+        const step = learningPath.steps[idx];
 
         // Find and update the checklist item
         const checklistItem = step.checklist?.find((item: { id: string }) => item.id === itemId);
@@ -260,7 +244,7 @@ export const updateChecklistItem = async (
         learningPath.progress = Math.round((completedSteps / learningPath.steps.length) * 100);
 
         // Auto-advance to next step if current is complete
-        if (step.completed && learningPath.currentStepIndex === parseInt(stepIndex)) {
+        if (step.completed && learningPath.currentStepIndex === idx) {
             learningPath.currentStepIndex = Math.min(
                 learningPath.currentStepIndex + 1,
                 learningPath.steps.length - 1
@@ -316,11 +300,12 @@ export const completeStep = async (
             return;
         }
 
-        const step = learningPath.steps[parseInt(stepIndex)];
-        if (!step) {
-            res.status(404).json({ success: false, error: 'Step not found' });
+        const idx = parseStepIndex(stepIndex, learningPath.steps.length);
+        if (idx === null) {
+            res.status(400).json({ success: false, error: 'Invalid step index' });
             return;
         }
+        const step = learningPath.steps[idx];
 
         // Mark step and all checklist items as complete
         step.completed = true;
@@ -337,7 +322,7 @@ export const completeStep = async (
         learningPath.progress = Math.round((completedSteps / learningPath.steps.length) * 100);
 
         // Advance to next step
-        if (learningPath.currentStepIndex === parseInt(stepIndex)) {
+        if (learningPath.currentStepIndex === idx) {
             learningPath.currentStepIndex = Math.min(
                 learningPath.currentStepIndex + 1,
                 learningPath.steps.length - 1

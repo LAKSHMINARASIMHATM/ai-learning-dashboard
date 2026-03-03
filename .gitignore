@@ -19,6 +19,11 @@ yarn-error.log*
 # env files
 .env*
 
+
+# env files (server secrets)
+server/.env
+
+
 # vercel
 .vercel
 

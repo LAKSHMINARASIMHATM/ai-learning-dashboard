@@ -59,6 +59,7 @@ class ApiClient {
             const response = await fetch(`${API_URL}${endpoint}`, {
                 ...options,
                 headers,
+                credentials: 'include', // MED-07: Send cookies (including httpOnly)
             });
 
             const data = await response.json();
@@ -68,41 +69,40 @@ class ApiClient {
                 if (typeof window !== 'undefined') {
                     const refreshToken = localStorage.getItem('refreshToken');
 
-                    if (refreshToken) {
-                        try {
-                            // Try to refresh token
-                            const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ refreshToken }),
-                            });
+                    try {
+                        // Try to refresh token (always include credentials for cookies)
+                        const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ refreshToken }),
+                            credentials: 'include',
+                        });
 
-                            const refreshData = await refreshResponse.json();
+                        const refreshData = await refreshResponse.json();
 
-                            if (refreshData.success && refreshData.data?.accessToken) {
-                                // Update token
-                                this.setToken(refreshData.data.accessToken);
+                        if (refreshData.success && refreshData.data?.accessToken) {
+                            // Update token
+                            this.setToken(refreshData.data.accessToken, refreshData.data.refreshToken);
 
-                                // Retry original request
-                                return this.request<T>(endpoint, { ...options, _isRetry: true });
-                            }
-                        } catch (refreshError) {
-                            console.error('Token refresh failed:', refreshError);
+                            // Retry original request
+                            return this.request<T>(endpoint, { ...options, _isRetry: true });
                         }
+                    } catch (refreshError) {
+                        console.error('Token refresh failed:', refreshError);
                     }
-
-                    // If refresh failed or no refresh token, logout
-                    this.clearToken();
-                    window.location.href = '/login';
-                    return { success: false, error: 'Session expired. Please login again.' };
                 }
+
+                // If refresh failed or no refresh token, logout
+                this.clearToken();
+                window.location.href = '/login';
+                return { success: false, error: 'Session expired. Please login again.' };
             }
 
             return data;
         } catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'An error occurred',
+                error: (error as Error).message || 'An error occurred',
             };
         }
     }
@@ -130,12 +130,37 @@ class ApiClient {
         return result;
     }
 
+    async socialLogin(profile: { idToken: string; name?: string; email: string; avatar?: string }) {
+        const result = await this.request<{ user: unknown; accessToken: string; refreshToken: string }>('/auth/social', {
+            method: 'POST',
+            body: JSON.stringify(profile),
+        });
+        if (result.success && result.data?.accessToken) {
+            this.setToken(result.data.accessToken, result.data.refreshToken);
+        }
+        return result;
+    }
+
     async getMe() {
         return this.request('/auth/me');
     }
 
-    logout() {
-        this.clearToken();
+    async logout() {
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+        try {
+            await this.request('/auth/logout', {
+                method: 'POST',
+                body: JSON.stringify({ refreshToken }),
+            });
+        } catch (error) {
+            console.error('Logout request failed:', error);
+        } finally {
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
+        }
     }
 
     // Progress endpoints

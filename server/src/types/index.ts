@@ -52,6 +52,11 @@ export interface IUser extends Document {
         accessibilityMode: boolean;
     };
     currentLearningPathId?: Types.ObjectId;
+    isVerified: boolean;
+    verificationToken?: string;
+    verificationTokenExpires?: Date;
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
     lastActive: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -64,7 +69,8 @@ export interface AuthRequest extends Request {
 
 // Token Types
 export interface TokenPayload {
-    id: string;
+    id: string; // User ID
+    jti: string; // Unique JWT ID for blacklisting
     type: 'access' | 'refresh';
     iat?: number;
     exp?: number;
@@ -91,7 +97,7 @@ export interface IRefreshToken extends Document {
 
 // Token Blacklist Types
 export interface ITokenBlacklist extends Document {
-    token: string;
+    jti: string; // Only store the JWT ID, not the full token
     expiresAt: Date;
     reason: 'logout' | 'revoked' | 'security';
     createdAt: Date;
@@ -169,6 +175,7 @@ export interface IChecklistItem {
     estimatedHours: number;
     resourceType: 'video' | 'article' | 'exercise' | 'project' | 'quiz';
     isRequired: boolean;
+    url?: string;
 }
 
 export interface ILearningStep {
@@ -208,6 +215,7 @@ export interface ILearningPath extends Document {
     startedAt: Date;
     completedAt?: Date;
     isActive: boolean;
+    tags?: string[];
     createdAt: Date;
     updatedAt: Date;
 }
