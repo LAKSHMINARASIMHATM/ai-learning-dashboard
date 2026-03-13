@@ -61,13 +61,6 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            // Try Firebase Email/Password login first
-            try {
-                await signInWithEmailAndPassword(auth, formData.email, formData.password);
-            } catch (fbError) {
-                console.warn('Firebase email login failed, falling back to legacy API:', fbError);
-            }
-
             const result = await api.login(formData.email, formData.password);
 
             if (!result.success || !result.data) {
